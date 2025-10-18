@@ -11,7 +11,7 @@
       <label for="">Contraseña</label>
       <input type="password" placeholder="Tu Contraseña">
       
-      <router-link to="/about" class="forgot-password">¿Olvidaste tu contraseña?</router-link>
+      <router-link to="/catalogo" class="forgot-password">¿Olvidaste tu contraseña?</router-link>
       
       <button class="btnIniciar">Iniciar Sesión</button>
       
