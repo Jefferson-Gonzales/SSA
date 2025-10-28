@@ -71,14 +71,14 @@ import { ref } from 'vue'
 import FloatingAssistantButton from '@/components/FloatingAssistantButton.vue';
 
 const products = ref([
-  { id: 1, name: 'Suéter de punto acogedor', price: '$49.99', image: '/placeholder.svg?height=250&width=250' },
-  { id: 2, name: 'Jeans Clásicos', price: '$59.99', image: '/placeholder.svg?height=250&width=250' },
-  { id: 3, name: 'Botines de cuero', price: '$89.99', image: '/placeholder.svg?height=250&width=250' },
-  { id: 4, name: 'Camiseta de algodón', price: '$19.99', image: '/placeholder.svg?height=250&width=250' },
-  { id: 5, name: 'Zapatillas deportivas para correr', price: '$79.99', image: '/placeholder.svg?height=250&width=250' },
-  { id: 6, name: 'Elegante bufanda de seda', price: '$29.99', image: '/placeholder.svg?height=250&width=250' },
-  { id: 7, name: 'Mochila casual de lona', price: '$39.99', image: '/placeholder.svg?height=250&width=250' },
-  { id: 8, name: 'Gafas de sol con estilo', price: '$24.99', image: '/placeholder.svg?height=250&width=250' }
+  { id: 1, name: 'Suéter de punto acogedor', price: '$49.99', image: 'https://placehold.jp/250x250.png' },
+  { id: 2, name: 'Jeans Clásicos', price: '$59.99', image: 'https://placehold.jp/250x250.png' },
+  { id: 3, name: 'Botines de cuero', price: '$89.99', image: 'https://placehold.jp/250x250.png' },
+  { id: 4, name: 'Camiseta de algodón', price: '$19.99', image: 'https://placehold.jp/250x250.png' },
+  { id: 5, name: 'Zapatillas deportivas para correr', price: '$79.99', image: 'https://placehold.jp/250x250.png' },
+  { id: 6, name: 'Elegante bufanda de seda', price: '$29.99', image: 'https://placehold.jp/250x250.png' },
+  { id: 7, name: 'Mochila casual de lona', price: '$39.99', image: 'https://placehold.jp/250x250.png' },
+  { id: 8, name: 'Gafas de sol con estilo', price: '$24.99', image: 'https://placehold.jp/250x250.png' }
 ])
 </script>
 

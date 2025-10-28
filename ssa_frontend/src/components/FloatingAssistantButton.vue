@@ -1,5 +1,5 @@
 <template>
-  <button class="floating-assistant-btn">
+  <button class="floating-assistant-btn" @click="$emit('open-chat')">
     <img width="40" height="40" src="https://img.icons8.com/color/48/message-bot.png" alt="message-bot"/>
   </button>
 </template>

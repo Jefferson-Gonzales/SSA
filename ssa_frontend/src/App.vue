@@ -3,19 +3,27 @@
     <HeaderNav v-if="!$route.meta.hideNavbar" :cartItemsCount="cartItemCount" />
 
     <router-view/>
+    <FloatingAssistantButton v-if="!isChatOpen" @open-chat="isChatOpen = true"/>
+    <ChatBot v-if="isChatOpen" @close-chat="isChatOpen = false"/>
   </div>
 </template>
 
 <script>
 import HeaderNav from '@/components/HeaderNav.vue'
+import FloatingAssistantButton from './components/FloatingAssistantButton.vue';
+import ChatBot from './views/ChatBot.vue';
+
 
 export default {
   components: {
-    HeaderNav
+    HeaderNav,
+    FloatingAssistantButton,
+    ChatBot
   },
   data() {
     return {
-      cartItemCount: 1
+      cartItemCount: 1,
+      isChatOpen: false
     }
   }
 }
