@@ -11,7 +11,7 @@
       <label for="">Contraseña</label>
       <input type="password" placeholder="Tu Contraseña">
       
-      <router-link to="/catalogo" class="forgot-password">¿Olvidaste tu contraseña?</router-link>
+      <router-link to="/" class="forgot-password">¿Olvidaste tu contraseña?</router-link>
       
       <button class="btnIniciar">Iniciar Sesión</button>
       
@@ -19,7 +19,9 @@
         <router-link to="/registro">¿No tienes una cuenta?</router-link>
       </div>
 
-      <button class="btnRegistro">Regístrarse</button>
+      <router-link to="/registro" class="btnRegistro" custom v-slot="{ navigate }">
+        <button @click="navigate" class="btnRegistro">Regístrarse</button>
+      </router-link>
     </div>
   </div>
 </template>

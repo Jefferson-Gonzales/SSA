@@ -4,7 +4,7 @@
     <!-- Chat Header -->
     <div class="chat-header">
       <div class="header-content">
-        <img width="48" height="48" src="https://img.icons8.com/parakeet/48/chatbot.png" alt="chatbot"/>
+        <img width="45" height="45" src="../assets/ic_bot.png" alt="chatbot"/>
         <div class="header-info">
           <h3 class="header-title">Asistente de compras</h3>
           <span class="status-badge">Online</span>
@@ -17,7 +17,7 @@
     <div class="messages-container">
       <!-- Assistant Message -->
       <div class="message-group assistant">
-        <img width="48" height="48" src="https://img.icons8.com/parakeet/48/chatbot.png" alt="Assistant" class="message-avatar">
+        <img width="48" height="48" src="../assets/ic_bot.png" alt="Assistant" class="message-avatar">
         <div class="message-bubble assistant-message">
           <p>Hola, soy tu asistente de compras. ¿En qué puedo ayudarte hoy?</p>
         </div>
@@ -33,7 +33,7 @@
 
       <!-- Assistant Message -->
       <div class="message-group assistant">
-        <img width="48" height="48" src="https://img.icons8.com/parakeet/48/chatbot.png" alt="Assistant" class="message-avatar">
+        <img width="48" height="48" src="../assets/ic_bot.png" alt="Assistant" class="message-avatar">
         <div class="message-bubble assistant-message">
           <p>Claro, ¿qué tipo de zapatillas para correr estás buscando? ¿Alguna marca o característica en particular?</p>
         </div>
@@ -41,7 +41,7 @@
 
       <!-- Typing Indicator -->
       <div class="message-group assistant">
-        <img width="48" height="48" src="https://img.icons8.com/parakeet/48/chatbot.png" alt="Assistant" class="message-avatar">
+        <img width="48" height="48" src="../assets/ic_bot.png" alt="Assistant" class="message-avatar">
         <div class="typing-indicator">
           <span></span>
           <span></span>
@@ -60,6 +60,9 @@
         @keyup.enter="sendMessage"
         aria-label="Escribe tu mensaje"
       />
+      <button type="button" class="audio-btn" @click="startAudio" aria-label="Enviar audio" style="margin-right: 8px;">
+        <img width="27" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAC5klEQVR4nO2Yz2oUQRDGZw0aNNGTD2BU9OBR1yTmsEZBPYh3xaDgUVHQg+ApiEhACSqJUcEnEFHIQZIoBPQVdPUQMIp/MCCYSGQDm58U1Cxlu87OLD2b2TUfNAPVXVXf113du91BsIoWA3AAuA8UgZ/aimrrD7IKYCvwgtp4LmODLAHoBeaIDxnbG2QBwDaHfAkYAbqBDm0icBRYckR0ZUGALZsvwO6IsXkdE2KysWyrb1g783ti+OSdldjfGLbVyTwwREYS+N01fvfSZRlN5K0h0p3AT/ZEiGK6LKOJLBginQn8Nhq/hXRZRhOpoA7fGXWdSYdd+gK2A5fkmw67lAVkAvzPK0AL7IEK0mEXj8SiclhsVgEXgHfyzbQA4DrwS74eY1YVkEauQP+oCUoNEFDynSsqWRuwS74eY1bgg3utZONqHm9WAWU1lz3GnFfzvA/uqc1WRMwTwCv5+uAe+bfZzNYf9hjxNhm/H96IRiSUsz7EDmOX9556LjT7jN+bKn3HgJxPAdMm4RFjl8eqEKMJ4o0ZvzFj7wOW1X7Wp4Bhk/C2sffXcanf61zqC/+4Y1/zKaBgAr+3576+tIWQJ5N8DfJfzfgJ07cO+FZPScYR0OY8Xp0yfV1O35K+Okgtd2rr07KxMy9kt5g450zfrNc9oAmuOAk6TF9PwqdFId9j/Dc7K3PeK3lNsh74aJI8trOkKzEZg/yEM/NrgGdOibZ7F6DJjjtkbrhLLS9t8lglx6P+fkh7rSVUqFKaD028sj3l0hJx0xHxyJZTgjhSNk+cWFfTYf33rD11En8ATks5xPBvB844NY+uWk1/nyLclQjr9w5wGNhpntdlfxwFbgGfHZ9lYMj7qZNgT3yifswChxpO3BGxQY/YuYTELyb5A9iosipoaU07gr4DL/W+exBYG2QdwKARMBg0G1gV0CDI8QecBC47bcoImKrSLz65LAgYoH4MrDT/lhCQ03IYStiyUUIrjd+bjgyI3NkBgwAAAABJRU5ErkJggg==" alt="microphone">
+      </button>
       <button type="button" class="send-btn" @click="sendMessage" aria-label="Enviar mensaje">
         <span class="arrow">➤</span>
       </button>
@@ -82,15 +85,32 @@ export default {
     sendMessage() {
       const text = this.messageText.trim()
       if (!text) return
-      // aquí iría la lógica real para enviar el mensaje al backend o manejarlo
       console.log('Message sent:', text)
       this.messageText = ''
+    },
+    startAudio() {
+      alert('Funcionalidad de audio próximamente');
     }
   }
 }
 </script>
 
 <style scoped>
+.audio-btn {
+  background-color: #b3e34f;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 50px;
+}
+.audio-btn:hover {
+  background-color: #a3d340;
+  color: #ffffff;
+  border-radius: 60px;
+}
 * {
   margin: 0;
   padding: 0;
@@ -99,7 +119,7 @@ export default {
 
 .chat-wrapper {
   position: fixed;
-  bottom: 90px; /* above the floating button */
+  bottom: 90px;
   right: 24px;
   z-index: 1500;
   display: flex;
@@ -203,7 +223,7 @@ export default {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
   flex-shrink: 0;
 }
 

@@ -76,7 +76,7 @@ export default {
     title: 'Esenciales del Hogar',
     description: 'Renueva tu hogar con nuestras ofertas especiales.',
     validity: '30/11/2024',
-    image: 'https://via.placeholder.com/300x200/C8D9C3/000000?text=Hogar',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgb2fpxWTBbvDYZoX3vHLTYy_7j9-UngYzgA&s',
     buttonText: 'Aplicar Promoción',
     buttonType: 'primary'
   }
@@ -88,7 +88,7 @@ export default {
     title: 'Oferta de Estilo Veraniego',
     description: 'Prepárate para el verano con nuestra colección con estilo.',
     validity: '31/08/2024',
-    image: 'https://via.placeholder.com/300x200/F5DEB3/000000?text=Verano',
+    image: 'https://i.pinimg.com/736x/62/19/22/62192265b447adbf212231fd65abac65.jpg',
     buttonText: 'Ver Detalles'
   },
   {
@@ -96,7 +96,7 @@ export default {
     title: 'Evento de Actualización Tecnológica',
     description: 'Actualiza tu tecnología con los últimos dispositivos.',
     validity: '15/09/2024',
-    image: 'https://via.placeholder.com/300x200/A8D5BA/000000?text=Tech',
+    image: 'https://mbe.pe/wp-content/uploads/2023/11/MBE_P_0001_Electronicos.jpg',
     buttonText: 'Ver Detalles'
   },
   {
@@ -104,7 +104,7 @@ export default {
     title: 'Ofertas de Renovación del Hogar',
     description: 'Transforma tu hogar con nuestra selección curada.',
     validity: '30/09/2024',
-    image: 'https://via.placeholder.com/300x200/5A7D6F/FFFFFF?text=Renovación',
+    image: 'https://theressa.net/images/articles/5bec1c7c77690house.jpg',
     buttonText: 'Ver Detalles'
   },
   {
@@ -112,7 +112,7 @@ export default {
     title: 'Equipo de Aventura al Aire Libre',
     description: 'Equipo de alta calidad para tu próxima aventura.',
     validity: '10/10/2024',
-    image: 'https://via.placeholder.com/300x200/3D5A3D/FFFFFF?text=Aventura',
+    image: 'https://media.istockphoto.com/id/935244934/es/foto/equipo-de-viajero-en-la-aventura-de-la-vida-al-aire-libre-y-camping-concepto-de-viaje.jpg?s=612x612&w=0&k=20&c=kuY1RT_OpMmQcb9x2FY08I7i3RzfmIw9q85vdu2XK1Q=',
     buttonText: 'Ver Detalles'
   }
     ])
@@ -150,9 +150,9 @@ export default {
   position: absolute;
   right: 0;
   top: 0;
-  width: 50%;
+  width: 100%;
   height: 100%;
-  background: url('https://via.placeholder.com/600x300') center/cover;
+  background: url('https://cdn.shopify.com/s/files/1/0533/4361/7210/files/Las_flores_nunca_fallan_incluso_para_decorar_una_pared_de_tu_salon..jpg?v=1643876379') center/cover;
   opacity: 0.3;
 }
 
@@ -257,9 +257,11 @@ export default {
 }
 
 .promo-image {
-  width: 100%;
-  height: 220px;
+  width: 90%;
+  height: 230px;
   object-fit: cover;
+  margin: 15px;
+  border-radius: 10px;
 }
 
 .promo-content {

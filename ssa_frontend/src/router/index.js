@@ -4,6 +4,7 @@ import LoginView from '../views/LoginView.vue'
 import CatalogoView from '../views/CatalogoView.vue'
 import CarritoView from '../views/CarritoView.vue'
 import Ofertas from '@/views/Ofertas.vue'
+import RegistroView from '@/views/RegistroView.vue'
 
 const routes = [
   
@@ -16,6 +17,12 @@ const routes = [
     path: '/login',
     name: 'login',
     component: LoginView,
+    meta: { hideNavbar: true }
+  },
+  {
+    path: '/registro',
+    name: 'registro',
+    component: RegistroView,
     meta: { hideNavbar: true }
   },
   {

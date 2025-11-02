@@ -1,6 +1,6 @@
 <template>
   <button class="floating-assistant-btn" @click="$emit('open-chat')">
-    <img width="40" height="40" src="https://img.icons8.com/color/48/message-bot.png" alt="message-bot"/>
+    <img class="icon-chat" src="../assets/ic_bot.png" alt="message-bot"/>
   </button>
 </template>
 
@@ -25,5 +25,10 @@
 .floating-assistant-btn:hover {
   background-color: #b9de27;
   transform: scale(1.1);
+}
+
+.icon-chat {
+  width: 35px;
+  height: 35px;
 }
 </style>

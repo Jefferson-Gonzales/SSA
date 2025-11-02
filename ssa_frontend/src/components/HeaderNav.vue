@@ -5,8 +5,8 @@
         <h1 class="logo">SAGASMART</h1>
         <nav class="nav">
           <router-link to="/" class="nav-link">Home</router-link>
+          <router-link to="/ofertas" class="nav-link">Ofertas</router-link>
           <router-link to="/contact" class="nav-link">Contact</router-link>
-          <router-link to="/ofertas" class="nav-link">Shop</router-link>
           <router-link to="/about" class="nav-link">About</router-link>
         </nav>
       </div>
@@ -16,7 +16,9 @@
           <input type="text" placeholder="Buscar" class="search-input" />
         </div>
         <button class="icon-btn"><img width="24" height="24" src="https://img.icons8.com/material-outlined/24/like--v1.png" alt="like--v1"/></button>
-        <button class="icon-btn"><img width="24" height="24" src="https://img.icons8.com/small/32/shopping-bag.png" alt="shopping-bag"/></button>
+        <router-link to="/carrito" class="icon-btn" aria-label="Ver carrito">
+          <img width="24" height="24" src="https://img.icons8.com/small/32/shopping-bag.png" alt="shopping-bag"/>
+        </router-link>
         <button class="icon-btn profile"><img width="24" height="24" src="https://img.icons8.com/color/48/user-male-circle--v1.png" alt="user-male-circle--v1"/></button>
       </div>
     </header>
