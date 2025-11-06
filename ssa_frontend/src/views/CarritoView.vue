@@ -14,7 +14,7 @@
             <div class="item-details">
               <h3 class="item-name">{{ item.name }}</h3>
               <p class="item-size">{{ item.size }}</p>
-              <p class="item-price">${{ item.price.toFixed(2) }}</p>
+              <p class="item-price">S/.{{ item.price.toFixed(2) }}</p>
             </div>
             
             <div class="quantity-control">
@@ -36,7 +36,7 @@
         
         <div class="summary-row">
           <span class="summary-label">Subtotal</span>
-          <span class="summary-value">${{ subtotal.toFixed(2) }}</span>
+          <span class="summary-value">S/.{{ subtotal.toFixed(2) }}</span>
         </div>
         
         <div class="summary-row">
@@ -48,7 +48,7 @@
         
         <div class="summary-row total">
           <span class="summary-label">Total</span>
-          <span class="summary-value">${{ total.toFixed(2) }}</span>
+          <span class="summary-value">S/.{{ total.toFixed(2) }}</span>
         </div>
         
         <button class="checkout-btn">Proceder a Pagar</button>

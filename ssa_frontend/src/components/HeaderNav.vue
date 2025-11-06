@@ -4,7 +4,7 @@
       <div class="header-left">
         <h1 class="logo">SAGASMART</h1>
         <nav class="nav">
-          <router-link to="/" class="nav-link">Home</router-link>
+          <router-link to="/catalogo" class="nav-link">Home</router-link>
           <router-link to="/ofertas" class="nav-link">Ofertas</router-link>
           <router-link to="/contact" class="nav-link">Contact</router-link>
           <router-link to="/about" class="nav-link">About</router-link>
@@ -19,11 +19,56 @@
         <router-link to="/carrito" class="icon-btn" aria-label="Ver carrito">
           <img width="24" height="24" src="https://img.icons8.com/small/32/shopping-bag.png" alt="shopping-bag"/>
         </router-link>
-        <button class="icon-btn profile"><img width="24" height="24" src="https://img.icons8.com/color/48/user-male-circle--v1.png" alt="user-male-circle--v1"/></button>
+        <div class="menu-perfil">
+          <button @click="toggleDropdown" class="icon-btn profile">
+            <img width="24" height="24" src="https://img.icons8.com/color/48/user-male-circle--v1.png" alt="user-male-circle--v1"/>
+          </button>
+          <div v-if="isDropdownOpen" class="dropdown-content">
+            <a href="#" class="menu-item">Configurar cuenta</a>
+            <a href="#" @click.prevent="logout" class="menu-item logout-link">Cerrar sesión</a>
+          </div>
+        </div>
+        <!--<button class="icon-btn profile"><img width="24" height="24" src="https://img.icons8.com/color/48/user-male-circle--v1.png" alt="user-male-circle--v1"/></button> -->
       </div>
     </header>
   </div>
 </template>
+
+<script>
+import router from '@/router'; 
+
+export default {
+  data() {
+    return {
+      isDropdownOpen: false, // Controla la visibilidad del menú
+    };
+  },
+  methods: {
+    toggleDropdown() {
+      // Alterna el estado del menú
+      this.isDropdownOpen = !this.isDropdownOpen;
+    },
+    logout() {
+      // 1. Borrar el token del Local Storage (CERRAR SESIÓN)
+      localStorage.removeItem('accessToken');
+      
+      // Opcional: Borrar cualquier otro dato de usuario
+      localStorage.removeItem('user'); 
+
+      // 2. Cerrar el menú
+      this.isDropdownOpen = false;
+
+      // 3. Redirigir al login (usando replace para limpiar el historial)
+      console.log('Cerrando sesión. Redirigiendo a Login.');
+      router.replace({ name: 'login' });
+    }
+  }
+}
+</script>
+
+
+
+
 
 <style scoped>
 * {
@@ -164,5 +209,42 @@ body {
   .nav {
     display: none;
   }
+}
+
+
+.menu-perfil {
+  position: relative; /* Contenedor para posicionar el dropdown relativo al botón */
+  display: inline-block;
+}
+
+.dropdown-content {
+  position: absolute;
+  top: 100%; /* Coloca el menú justo debajo del botón */
+  right: 0;
+  background-color: #ffffff;
+  min-width: 180px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15); /* Sombra más suave */
+  z-index: 1000; /* Asegura que esté por encima de otros elementos */
+  border-radius: 4px;
+  padding: 5px 0;
+  margin-top: 5px; /* Pequeño espacio entre el botón y el menú */
+}
+
+.menu-item {
+  color: #333333;
+  padding: 10px 15px;
+  text-decoration: none;
+  display: block;
+  font-size: 14px;
+}
+
+.menu-item:hover {
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.logout-link {
+    font-weight: 600; /* Resalta el botón de cerrar sesión */
+    color: #e53935; /* Opcional: Color de alerta para cerrar sesión */
 }
 </style>

@@ -1,8 +1,6 @@
 <template>
   <div>
-    <!-- Main Content -->
     <div class="main-content">
-      <!-- Sidebar Filters -->
       <aside class="sidebar">
         <div class="filter-section">
           <h3 class="filter-title">Filtros</h3>
@@ -10,76 +8,167 @@
 
         <div class="filter-section">
           <h4 class="filter-subtitle">Categorías</h4>
-          <select class="filter-select">
-            <option>Todas las Categorías</option>
-            <option>Ropa</option>
-            <option>Zapatos</option>
-            <option>Accesorios</option>
+          <select v-model="selectedCategoria" class="filter-select">
+            <option 
+              v-for="cat in categorias" 
+              :key="cat.idcategoria" 
+              :value="cat.idcategoria"
+            >
+              {{ cat.nombre }}
+            </option>
           </select>
         </div>
 
         <div class="filter-section">
           <h4 class="filter-subtitle">Rango de Precios</h4>
           <div class="price-range">
-            <span>$20</span>
-            <span>$200</span>
+            <span>S/.{{ minPrice }}</span>
+            <span>S/.{{ maxPrice }}</span>
           </div>
-          <input type="range" min="20" max="200" class="range-slider">
+          
+          <input type="range" :min="0" :max="maxPrice - 1" v-model.number="minPrice" class="range-slider">
+          <input type="range" :min="minPrice + 1" :max="MAX_PRICE_SLIDER" v-model.number="maxPrice" class="range-slider" style="margin-top: 5px;">
         </div>
-
+        
         <div class="filter-section">
           <h4 class="filter-subtitle">Ordenar Por</h4>
-          <select class="filter-select">
-            <option>Relevante</option>
-            <option>Precio: Menor a Mayor</option>
-            <option>Precio: Mayor a Menor</option>
-            <option>Más Nuevo</option>
+          <select v-model="sortBy" class="filter-select">
+            <option value="relevante">Relevante</option>
+            <option value="menor-precio">Precio: Menor a Mayor</option>
+            <option value="mayor-precio">Precio: Mayor a Menor</option>
+            <option value="mas-nuevo">Más Nuevo</option>
           </select>
         </div>
       </aside>
 
-      <!-- Products Section -->
       <section class="products-section">
         <h2 class="products-title">Productos</h2>
-        <div class="products-grid">
-          <div class="product-card" v-for="product in products" :key="product.id">
+        
+        <div v-if="loading" class="loading-message">Cargando productos...</div>
+        <div v-else-if="error" class="error-message">{{ error }}</div>
+        <div v-else-if="productos.length === 0" class="no-productos-message">No se encontraron productos con los filtros seleccionados.</div>
+
+        <div v-else class="products-grid">
+          <div class="product-card" v-for="producto in productos" :key="producto.idproducto">
             <div class="product-image">
-              <img :src="product.image" :alt="product.name">
+              <img :src="producto.imagenUrl || 'https://placehold.jp/250x250/e8e8e8/777777?text=SAGASMART'" :alt="producto.nombre">
             </div>
-            <h3 class="product-name">{{ product.name }}</h3>
-            <p class="product-price">{{ product.price }}</p>
+            <h3 class="product-name">{{ producto.nombre }}</h3>
+            <p class="product-price">S/. {{ parseFloat(producto.precioBase).toFixed(2) }}</p>
+            <button class="btn-agregar">Añadir al Carrito</button>
           </div>
         </div>
 
-        <!-- Pagination -->
         <div class="pagination">
-          <button class="pagination-btn">‹</button>
-          <button class="pagination-btn">2</button>
-          <button class="pagination-btn">3</button>
-          <button class="pagination-btn">...</button>
-          <button class="pagination-btn">10</button>
-          <button class="pagination-btn">›</button>
-        </div>
+          </div>
       </section>
     </div>
     <FloatingAssistantButton />
   </div>
 </template>
 
+
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'; 
+import apiClient from '@/services/api'; // Cliente para productos (requiere JWT)
+import axios from 'axios';             // Usaremos axios directamente para la categoría (ruta pública)
 import FloatingAssistantButton from '@/components/FloatingAssistantButton.vue';
 
-const products = ref([
-  { id: 1, name: 'Suéter de punto acogedor', price: '$49.99', image: 'https://placehold.jp/250x250.png' },
-  { id: 2, name: 'Jeans Clásicos', price: '$59.99', image: 'https://placehold.jp/250x250.png' },
-  { id: 3, name: 'Botines de cuero', price: '$89.99', image: 'https://placehold.jp/250x250.png' },
-  { id: 4, name: 'Camiseta de algodón', price: '$19.99', image: 'https://placehold.jp/250x250.png' },
-  { id: 5, name: 'Zapatillas deportivas para correr', price: '$79.99', image: 'https://placehold.jp/250x250.png' },
-  { id: 6, name: 'Elegante bufanda de seda', price: '$29.99', image: 'https://placehold.jp/250x250.png' },
-  { id: 7, name: 'Mochila casual de lona', price: '$39.99', image: 'https://placehold.jp/250x250.png' },
-  { id: 8, name: 'Gafas de sol con estilo', price: '$24.99', image: 'https://placehold.jp/250x250.png' }
-])
+// --- ESTADO Y FILTROS ---
+const productos = ref([]);
+const categorias = ref([]); // Lista dinámica de categorías
+const loading = ref(true);
+const error = ref(null);
+
+// **ESTADOS DE FILTRO** (Valores iniciales)
+const selectedCategoria = ref(null); // null = Todas las categorías
+const minPrice = ref(0); 
+const maxPrice = ref(100000); 
+const sortBy = ref('relevante'); // Criterio de ordenación
+
+// Rango máximo para el slider (ajusta según tus precios máximos reales)
+const MAX_PRICE_SLIDER = 1000; 
+
+// --- FUNCIONES DE CARGA DE DATOS ---
+
+// 1. Cargar Categorías (Ruta pública)
+const fetchCategorias = async () => {
+    try {
+        // Asumiendo que tu URL base es http://localhost:8080/ y Axios no tiene el baseURL
+        // Si tu apiClient tiene baseURL configurada, úsalo, sino usa la URL completa
+        const response = await axios.get('http://localhost:8080/api/categorias/categorias'); 
+        
+        // Añadir la opción "Todas las Categorías" al inicio
+        categorias.value = [{ idcategoria: null, nombre: 'Todas las Categorías' }, ...response.data];
+        console.log('Categorías cargadas:', categorias.value);
+        
+    } catch (err) {
+        console.error("Error al cargar categorías:", err);
+    }
+};
+
+// 2. Cargar Productos (Ruta protegida y filtrable)
+const fetchProductos = async () => {
+    loading.value = true;
+    error.value = null;
+    
+    // Construimos los parámetros de la URL
+    const params = {
+        // El backend espera idCategoria
+        idCategoria: selectedCategoria.value, 
+        precioMin: minPrice.value,
+        precioMax: maxPrice.value,
+        // Mandamos el criterio de ordenación al backend (si lo implementamos allí)
+        // sortBy: sortBy.value 
+    };
+    
+    // Limpiamos parámetros nulos o por defecto
+    Object.keys(params).forEach(key => {
+        // No enviamos el filtro si es null o si el precio es el valor por defecto
+        if (params[key] === null || params[key] === undefined) {
+            delete params[key];
+        }
+    });
+
+    try {
+        // Usamos apiClient para enviar el JWT en el Header
+        const response = await apiClient.get('/productos', { params }); 
+        
+        let data = response.data;
+
+        // Si la ordenación es en el Frontend (porque sortBy no se manda al backend)
+        if (sortBy.value === 'menor-precio') {
+            data.sort((a, b) => a.precioBase - b.precioBase);
+        } else if (sortBy.value === 'mayor-precio') {
+            data.sort((a, b) => b.precioBase - a.precioBase);
+        }
+        
+        productos.value = data;
+
+    } catch (err) {
+        console.error("Error al cargar productos:", err);
+        if (err.response && err.response.status === 401) {
+            error.value = "Sesión expirada. Por favor, vuelva a iniciar sesión.";
+        } else {
+             error.value = "No se pudieron cargar los productos. Inténtalo más tarde.";
+        }
+    } finally {
+        loading.value = false;
+    }
+};
+
+// --- WATCHERS: Recargar productos al cambiar los filtros ---
+// El 'deep: true' no es necesario aquí, pero watch detectará los cambios en las referencias (ref)
+watch([selectedCategoria, minPrice, maxPrice, sortBy], () => {
+    // Si cambia cualquiera de estos valores, se llama a la API para refrescar los productos
+    fetchProductos();
+});
+
+// --- CICLO DE VIDA ---
+onMounted(() => {
+    fetchCategorias(); // Cargar categorías primero
+    fetchProductos();  // Luego cargar productos
+});
 </script>
 
 <style scoped>
@@ -265,4 +354,31 @@ const products = ref([
   }
 }
 
+
+/* CatalogoView.vue (dentro de <style scoped>) */
+
+/* Mensajes de estado */
+.loading-message, .error-message, .no-productos-message {
+    padding: 20px;
+    text-align: center;
+    font-size: 1.2em;
+    color: #333;
+}
+.error-message {
+    color: red;
+    font-weight: bold;
+}
+.btn-agregar {
+    /* Estilos del botón de tu respuesta anterior */
+    background-color: #AAD500;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* ... (Asegúrate de que tus estilos .product-card y .products-grid se vean bien) */
 </style>

@@ -1,6 +1,8 @@
 <template>
   <div>
     <HeaderNav v-if="!$route.meta.hideNavbar" :cartItemsCount="cartItemCount" />
+    
+
 
     <router-view/>
     <FloatingAssistantButton v-if="!isChatOpen" @open-chat="isChatOpen = true"/>
