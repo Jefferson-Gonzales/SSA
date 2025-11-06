@@ -40,9 +40,12 @@
                   type="text"
                   placeholder="Ingresa tu nombre"
                   class="form-input"
+                  @input="validateNombres"
                   required
                 />
+                <div v-if="errors.firstName" class="error-message">{{ errors.firstName }}</div>
               </div>
+
               <div class="form-group">
                 <label for="lastName">Apellido</label>
                 <input
@@ -51,8 +54,10 @@
                   type="text"
                   placeholder="Ingresa tu apellido"
                   class="form-input"
+                  @input="validateApellidos"
                   required
                 />
+                 <div v-if="errors.lastName" class="error-message">{{ errors.lastName }}</div>
               </div>
             </div>
 
@@ -78,8 +83,10 @@
                 type="password"
                 placeholder="Mínimo 8 caracteres"
                 class="form-input"
+                @input="validatePassword"
                 required
               />
+              <div v-if="errors.password" class="error-message">{{ errors.password }}</div>
               <p class="password-hint">Usa mayúsculas, números y caracteres especiales</p>
             </div>
 
@@ -92,8 +99,10 @@
                 type="password"
                 placeholder="Repite tu contraseña"
                 class="form-input"
+                @input="validateConfirmPassword"
                 required
               />
+              <div v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</div>
             </div>
 
             <!-- Terms & Conditions -->
@@ -124,8 +133,13 @@
               </label>
             </div>
 
-            <!-- Submit Button -->
-            <button type="submit" class="submit-button">Crear Cuenta</button>
+            <p v-if="errorMsg" class="form-error">{{ errorMsg }}</p>
+            <button type="submit" class="submit-button" :disabled="isLoading || !isFormValid"> 
+              {{ isLoading ? 'Creando cuenta...' : 'Crear Cuenta' }}
+            </button>
+
+            <!-- Submit Button 
+            <button type="submit" class="submit-button">Crear Cuenta</button>-->
 
             <!-- Login Link -->
             <p class="login-link">
@@ -138,6 +152,147 @@
   </div>
 </template>
 
+<script setup>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+// 🛑 IMPORTAR TU CLIENTE AXIOS/API
+import apiClient from '@/services/api'; // Asegúrate de que esta ruta sea correcta
+
+const router = useRouter()
+const isLoading = ref(false) // Estado para manejar la carga
+const errorMsg = ref('') // Estado para mostrar errores del servidor
+
+const form = ref({
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  terms: false,
+  newsletter: true, // No se envía, pero se mantiene para la UI
+})
+
+//para la validacion de campos
+const errors = ref({
+  firstName: '',
+  lastName: '',
+  password: '',
+  confirmPassword: ''
+})
+
+// --- CONSTANTES Y REGEX ---
+const MIN_PASSWORD_LENGTH = 8;
+const nameRegex = /^[a-zA-Z\sñÑáÁéÉíÍóÓúÚ]+$/;
+
+// --- FUNCIONES DE VALIDACIÓN ---
+
+const validateNombres = () => {
+   errors.value.firstName = '';
+   const value = form.value.firstName.trim();
+   if (value && !nameRegex.test(value)) {
+     errors.value.firstName = 'Solo se permiten letras y espacios.';
+    }
+  };
+
+const validateApellidos = () => { // ✅ CORREGIDO: El nombre de la función en el template era incorrecto
+ errors.value.lastName = '';
+ const value = form.value.lastName.trim();
+ if (value && !nameRegex.test(value)) {
+  errors.value.lastName = 'Solo se permiten letras y espacios.';
+}
+};
+
+const validatePassword = () => {
+  errors.value.password = '';
+  if (form.value.password.length > 0 && form.value.password.length < MIN_PASSWORD_LENGTH) {
+    errors.value.password = `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+  }
+  
+  // Re-validar la confirmación cuando cambia la contraseña
+  validateConfirmPassword();
+};
+
+const validateConfirmPassword = () => {
+  errors.value.confirmPassword = '';
+  if (form.value.password !== form.value.confirmPassword) {
+    errors.value.confirmPassword = 'Las contraseñas no coinciden.';
+  }
+};
+
+// --- COMPUTED PARA ESTADO GENERAL DEL FORMULARIO ---
+const isFormValid = computed(() => {
+  // 1. Verificar errores de campo
+  const hasFieldErrors = Object.values(errors.value).some(e => e !== '');
+
+  // 2. Verificar que los campos requeridos estén llenos y cumplan con la longitud mínima
+  const fieldsAreValid = 
+  form.value.firstName.trim() !== '' &&
+  form.value.lastName.trim() !== '' &&
+  form.value.email.trim() !== '' &&
+  form.value.password.length >= MIN_PASSWORD_LENGTH &&
+  form.value.password === form.value.confirmPassword &&
+  form.value.terms;
+  
+  return fieldsAreValid && !hasFieldErrors;
+});
+
+const handleSubmit = async () => {
+  errorMsg.value = '' // Limpiar errores anteriores
+
+  // 1. Validaciones básicas del Frontend
+  if (form.value.password !== form.value.confirmPassword) {
+    errorMsg.value = 'Las contraseñas no coinciden.';
+    return
+  }
+  if (!form.value.terms) {
+    errorMsg.value = 'Debes aceptar los términos y condiciones.';
+    return
+  }
+
+  // 2. Crear el DTO de Registro (Asegurar que los nombres de las claves coincidan con el Backend)
+  // Backend espera: { nombres, apellidos, email, password }
+  const registrationData = {
+    nombres: form.value.firstName,
+    apellidos: form.value.lastName,
+    email: form.value.email,
+    password: form.value.password, // Enviamos la contraseña sin hash
+    // Asegúrate de que el backend no necesite 'contrasenaHash', 
+    // ya que lo codifica internamente con PasswordEncoder
+  }
+
+  isLoading.value = true // Activar estado de carga
+
+  try {
+    // 3. Llamada al Backend
+    // Endpoint: POST /api/auth/registro
+    const response = await apiClient.post('/auth/registro', registrationData)
+
+    // 4. Manejo de éxito
+    console.log('Registro exitoso:', response.data)
+    
+    // Redirigir al usuario a la página de login o a su perfil
+    alert('¡Registro exitoso! Por favor, inicia sesión.')
+    router.push('/login') 
+
+  } catch (error) {
+    // 5. Manejo de errores
+    console.error('Error durante el registro:', error)
+    
+    // Extraer mensaje de error del backend (si está disponible)
+    if (error.response && error.response.data) {
+      // Si el backend devuelve un string de error (como "El email ya está en uso")
+      errorMsg.value = error.response.data
+    } else {
+      errorMsg.value = 'Fallo al conectar con el servidor. Inténtalo de nuevo.'
+    }
+    
+  } finally {
+    isLoading.value = false // Desactivar estado de carga
+  }
+}
+</script>
+
+<!-- 
 <script setup>
 import { ref } from 'vue'
 
@@ -164,7 +319,7 @@ const handleSubmit = () => {
   alert('¡Cuenta creada exitosamente!')
 }
 </script>
-
+-->
 <style scoped>
 * {
   margin: 0;
@@ -468,5 +623,21 @@ const handleSubmit = () => {
   .form-title {
     font-size: 20px;
   }
+}
+/* 🛑 Ajustes mínimos de estilo para mostrar el error */
+.form-error {
+    color: #cc0000;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+/* 🛑 Estilos para el botón de carga */
+.submit-button[disabled] {
+    background-color: #999;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 </style>
