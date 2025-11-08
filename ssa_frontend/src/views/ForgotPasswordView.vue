@@ -1,68 +1,67 @@
 <template>
-  <!-- Main Container: Centered Layout con fondo gris claro -->
-  <div class="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-    
-    <!-- Bloque de Cabecera y Título: Estilo SAGASMART -->
-    <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
-      <h1 class="text-5xl font-extrabold text-gray-900 title-sagasmart">
-        SAGASMART
-      </h1>
-      <h2 class="mt-4 text-center text-3xl font-bold text-gray-900">
-        ¿Olvidaste tu Contraseña?
-      </h2>
-      <p class="mt-2 text-center text-base text-gray-600">
-        Ingresa tu correo electrónico para recibir un enlace de restablecimiento.
-      </p>
+  <div class="reset-container">
+    <!-- Left Side - Branding -->
+    <div class="reset-left">
+      <div class="reset-branding">
+        <h1>Recupera tu contraseña</h1>
+        <p>Te ayudaremos a acceder a tu cuenta de Saga Smart</p>
+      </div>
+
+      <div class="reset-features">
+        <div class="feature">
+          <div class="feature-icon">✓</div>
+          <p>Seguridad garantizada</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">✓</div>
+          <p>Proceso rápido y sencillo</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">✓</div>
+          <p>Soporte 24/7 disponible</p>
+        </div>
+      </div>
     </div>
 
-    <!-- Tarjeta del Formulario (Similar al Login) -->
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-      <div class="bg-white py-10 px-6 shadow-xl rounded-xl sm:px-12">
-        
-        <form @submit.prevent="requestReset" class="space-y-6">
-          
-          <!-- Campo de Correo Electrónico -->
-          <div>
-            <label for="email" class="block text-sm font-bold text-gray-900 mb-2">
-              Correo Electrónico
-            </label>
-            <div class="mt-1">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autocomplete="email"
+    <!-- Right Side - Form (mantiene la lógica existente de requestReset) -->
+    <div class="reset-right">
+      <div class="reset-form-container">
+        <div class="reset-form-step">
+          <h2>Verifica tu correo</h2>
+          <p class="step-description">Ingresa el correo electrónico asociado a tu cuenta</p>
+
+          <form @submit.prevent="requestReset">
+            <div class="form-group">
+              <label for="email">Correo electrónico</label>
+              <input 
+                v-model="email" 
+                type="email" 
+                id="email" 
+                placeholder="tu@correo.com"
                 required
-                v-model="email"
-                placeholder="Ingresa tu email"
-                class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-blue focus:border-brand-blue sm:text-sm input-sagasmart"
-              />
+              >
             </div>
-          </div>
-
-          <!-- Botón de Envío: Color de Marca Principal (#AAD500) -->
-          <div>
-            <button
-              type="submit"
-              :disabled="isLoading"
-              class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-bold text-white bg-brand-green hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green disabled:opacity-50 transition ease-in-out duration-150"
-            >
-              <span v-if="isLoading">Enviando...</span>
-              <span v-else>Enviar Enlace de Restablecimiento</span>
+            <button type="submit" class="btn-primary" :disabled="isLoading">
+              <span v-if="isLoading">Enviando enlace...</span>
+              <span v-else>Enviar enlace de recuperación</span>
             </button>
-          </div>
-        </form>
+          </form>
 
-        <!-- Mensaje de Estado (Éxito o Error) -->
-        <div v-if="message" class="mt-6 p-4 rounded-lg text-center font-medium border" :class="messageClass">
-          {{ message }}
-        </div>
-        
-        <!-- Enlace para volver al login: Color de Marca Secundario (#2F99DC) -->
-        <div class="mt-6 text-center">
-            <router-link to="/login" class="text-sm font-medium text-brand-blue hover:text-brand-blue-dark transition ease-in-out duration-150">
-                &larr; Volver a Iniciar Sesión
-            </router-link>
+          <div v-if="message" class="alert" :class="isError ? 'alert--error' : 'alert--success'" role="status">
+            <div class="alert-icon" aria-hidden>
+              <svg v-if="!isError" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 12.5L4.5 9l-1 1L8 15.5l9-9-1-1L8 12.5z" fill="#43691A"/>
+              </svg>
+              <svg v-else width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.41 10l4.3-4.29-1.42-1.42L10 8.59 5.71 4.29 4.29 5.71 8.59 10l-4.3 4.29 1.42 1.42L10 11.41l4.29 4.3 1.42-1.42L11.41 10z" fill="#8B1E1E"/>
+              </svg>
+            </div>
+            <div class="alert-content">{{ message }}</div>
+          </div>
+
+          <p class="form-link mt-4">
+            ¿Recordaste tu contraseña? <router-link to="/login">Inicia sesión aquí</router-link>
+          </p>
         </div>
       </div>
     </div>
@@ -70,7 +69,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import axios from 'axios';
 
 // Estado del formulario
@@ -79,14 +78,6 @@ const isLoading = ref(false);
 const message = ref('');
 const isError = ref(false);
 
-// Clase dinámica para el mensaje de estado (éxito o error)
-const messageClass = computed(() => ({
-    // Clase para errores (rojo estándar de Tailwind)
-    'bg-red-100 text-red-800 border-red-300': isError.value, 
-    // Clase para éxito/informativo (verde claro de Tailwind, coherente con la marca)
-    'bg-lime-50 text-lime-800 border-lime-300': !isError.value && message.value,
-}));
-
 // URL de tu backend
 const API_URL = 'http://localhost:8080/api/auth/forgot-password';
 
@@ -94,73 +85,307 @@ const API_URL = 'http://localhost:8080/api/auth/forgot-password';
  * Maneja el envío de la solicitud de restablecimiento de contraseña.
  */
 const requestReset = async () => {
-    isLoading.value = true;
-    message.value = '';
-    isError.value = false;
+  isLoading.value = true;
+  message.value = '';
+  isError.value = false;
 
-    try {
-        const response = await axios.post(API_URL, {
-            email: email.value
-        });
+  try {
+    const response = await axios.post(API_URL, {
+      email: email.value
+    });
 
-        // La respuesta del backend es intencionalmente genérica por seguridad.
-        if (response.status === 200) {
-            message.value = 'Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña en breve. Revisa tu bandeja de entrada y spam.';
-        } else {
-            message.value = 'Ocurrió un error inesperado. Inténtalo más tarde.';
-            isError.value = true;
-        }
-
-    } catch (error) {
-        console.error('Error al solicitar restablecimiento:', error);
-        // Mensaje de seguridad, intencionalmente no revelamos si el correo existe o no
-        message.value = 'Se ha procesado la solicitud. Si el correo existe, el enlace será enviado.';
-        isError.value = false; 
-    } finally {
-        isLoading.value = false;
+    if (response.status === 200) {
+      message.value = 'Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña en breve. Revisa tu bandeja de entrada y spam.';
+    } else {
+      message.value = 'Ocurrió un error inesperado. Inténtalo más tarde.';
+      isError.value = true;
     }
+
+  } catch (error) {
+    console.error('Error al solicitar restablecimiento:', error);
+    message.value = 'Se ha procesado la solicitud. Si el correo existe, el enlace será enviado.';
+    isError.value = false; 
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
 <style scoped>
-/*
-  IMPORTANTE: Incluimos la fuente de Google Fonts para replicar el estilo del logo "SAGASMART" del Login.
-  Utilizamos variables CSS para los colores de marca exactos.
-*/
-@import url('https://fonts.googleapis.com/css2?family=Holtwood+One+SC&display=swap');
-
-/* --- Colores de Marca --- */
-:root {
-  --color-brand-green: #AAD500; /* Color primario: Botones de Acción */
-  --color-brand-green-dark: #91ba00; /* Hover del botón */
-  --color-brand-blue: #2F99DC; /* Color secundario: Enlaces */
-  --color-brand-blue-dark: #2785c4; /* Hover del enlace */
-  --color-input-focus-bg: #F0F5FF; /* Fondo sutil al enfocar el input */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Clases utilitarias personalizadas para integrar colores de marca con Tailwind */
-/* Botón */
-.bg-brand-green { background-color: var(--color-brand-green); border-color: var(--color-brand-green); }
-.hover\:bg-brand-green-dark:hover { background-color: var(--color-brand-green-dark); }
-.focus\:ring-brand-green:focus { --tw-ring-color: var(--color-brand-green); }
-
-/* Enlace/Focus */
-.text-brand-blue { color: var(--color-brand-blue); }
-.hover\:text-brand-blue-dark:hover { color: var(--color-brand-blue-dark); }
-.focus\:ring-brand-blue:focus { --tw-ring-color: var(--color-brand-blue); }
-.focus\:border-brand-blue:focus { border-color: var(--color-brand-blue); }
-
-
-/* Estilo específico para el logo SAGASMART (debe ser coherente con Login.view) */
-.title-sagasmart {
-  font-family: 'Holtwood One SC', serif;
-  font-size: 3rem; /* 48px, equivalente a text-5xl */
-  margin-bottom: 0.5rem;
+.reset-container {
+  display: flex;
+  height: 100vh;
+  background-color: #f5f5f5;
 }
 
-/* Estilo para que los inputs se parezcan al diseño del login */
-.input-sagasmart:focus {
-  background-color: var(--color-input-focus-bg);
-  transition: background-color 0.2s;
+/* Left Side - Branding */
+.reset-left {
+  flex: 1;
+  background: linear-gradient(135deg, #2d5016 0%, #3a6b1f 100%);
+  color: white;
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.reset-branding h1 {
+  font-size: 48px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.reset-branding p {
+  font-size: 18px;
+  opacity: 0.9;
+  margin-bottom: 60px;
+  line-height: 1.5;
+}
+
+.reset-features {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.feature-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #c5e01b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2d5016;
+  font-weight: 700;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.feature p {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Right Side - Form */
+.reset-right {
+  flex: 1;
+  padding: 60px 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+}
+
+.reset-form-container {
+  width: 100%;
+  max-width: 450px;
+}
+
+.reset-form-step h2 {
+  font-size: 32px;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.step-description {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #c5e01b;
+  box-shadow: 0 0 0 3px rgba(197, 224, 27, 0.1);
+}
+
+.form-group small {
+  display: block;
+  margin-top: 6px;
+  color: #999;
+  font-size: 12px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 14px 24px;
+  background-color: #c5e01b;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+}
+
+.btn-primary:hover {
+  background-color: #b3cc15;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(197, 224, 27, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.form-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: #666;
+}
+
+.form-link a {
+  color: #c5e01b;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.form-link a:hover {
+  text-decoration: underline;
+}
+
+/* Alert boxes */
+.alert {
+  margin-top: 10px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  max-width: 100%;
+}
+.alert--success {
+  background: #f5fde8;
+  border: 1px solid #e0f0c1;
+  color: #2a5d11;
+}
+.alert--error {
+  background: #fff4f4;
+  border: 1px solid #f2c6c6;
+  color: #7a1d1d;
+}
+.alert-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.alert-content {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.reset-success {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  background-color: #c5e01b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-size: 48px;
+  color: #2d5016;
+  font-weight: 700;
+}
+
+.reset-success h2 {
+  font-size: 28px;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.reset-success p {
+  color: #666;
+  margin-bottom: 32px;
+  font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .reset-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .reset-left {
+    padding: 40px 20px;
+    min-height: 300px;
+    justify-content: flex-start;
+    padding-top: 40px;
+  }
+
+  .reset-branding h1 {
+    font-size: 32px;
+  }
+
+  .reset-branding p {
+    font-size: 16px;
+    margin-bottom: 40px;
+  }
+
+  .reset-right {
+    padding: 40px 20px;
+    min-height: auto;
+  }
+
+  .reset-form-container {
+    max-width: 100%;
+  }
+
+  .reset-form-step h2 {
+    font-size: 24px;
+  }
 }
 </style>

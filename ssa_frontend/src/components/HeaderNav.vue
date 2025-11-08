@@ -24,7 +24,7 @@
             <img width="24" height="24" src="https://img.icons8.com/color/48/user-male-circle--v1.png" alt="user-male-circle--v1"/>
           </button>
           <div v-if="isDropdownOpen" class="dropdown-content">
-            <a href="#" class="menu-item">Configurar cuenta</a>
+            <router-link to="/perfil" class="menu-item" @click="isDropdownOpen = false">Configurar cuenta</router-link>
             <a href="#" @click.prevent="logout" class="menu-item logout-link">Cerrar sesión</a>
           </div>
         </div>
@@ -32,6 +32,7 @@
       </div>
     </header>
   </div>
+  <div class="header-spacer" aria-hidden="true"></div>
 </template>
 
 <script>
@@ -86,6 +87,20 @@ body {
 .container {
   width: 100%;
   background-color: #ffffff;
+}
+
+/* Make header fixed at top */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.header-spacer {
+  height: 72px; /* matches header approximate height */
+  width: 100%;
 }
 
 /* Header Styles */
@@ -208,6 +223,13 @@ body {
 
   .nav {
     display: none;
+  }
+}
+
+/* Increase spacer height for stacked header on small screens */
+@media (max-width: 768px) {
+  .header-spacer {
+    height: 140px;
   }
 }
 

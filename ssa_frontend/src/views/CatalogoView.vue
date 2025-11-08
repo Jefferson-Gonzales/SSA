@@ -49,18 +49,34 @@
         <div v-else-if="productos.length === 0" class="no-productos-message">No se encontraron productos con los filtros seleccionados.</div>
 
         <div v-else class="products-grid">
-          <div class="product-card" v-for="producto in productos" :key="producto.idproducto">
+          <div class="product-card" v-for="producto in paginatedProducts" :key="producto.idproducto" @click="openProduct(producto)">
             <div class="product-image">
               <img :src="producto.imagenUrl || 'https://placehold.jp/250x250/e8e8e8/777777?text=SAGASMART'" :alt="producto.nombre">
             </div>
             <h3 class="product-name">{{ producto.nombre }}</h3>
             <p class="product-price">S/. {{ parseFloat(producto.precioBase).toFixed(2) }}</p>
-            <button class="btn-agregar">Añadir al Carrito</button>
+            <div class="btn-container">
+              <button class="btn-agregar" @click.stop>Añadir al Carrito</button>
+            </div>
+
           </div>
         </div>
 
-        <div class="pagination">
-          </div>
+        <div class="pagination" v-if="totalPages > 1">
+          <button class="pagination-btn" :disabled="currentPage === 1" @click="prevPage">‹</button>
+          <template v-for="item in visiblePages" :key="String(item)">
+            <button
+              v-if="typeof item === 'number'"
+              class="pagination-btn"
+              :class="{ 'active': item === currentPage }"
+              @click="goToPage(item)"
+            >
+              {{ item }}
+            </button>
+            <span v-else class="pagination-ellipsis">…</span>
+          </template>
+          <button class="pagination-btn" :disabled="currentPage === totalPages" @click="nextPage">›</button>
+        </div>
       </section>
     </div>
     <FloatingAssistantButton />
@@ -69,13 +85,50 @@
 
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'; 
+import { ref, onMounted, watch, computed } from 'vue'; 
 import apiClient from '@/services/api'; // Cliente para productos (requiere JWT)
 import axios from 'axios';             // Usaremos axios directamente para la categoría (ruta pública)
+import { useRouter } from 'vue-router';
 import FloatingAssistantButton from '@/components/FloatingAssistantButton.vue';
 
-// --- ESTADO Y FILTROS ---
 const productos = ref([]);
+const pageSize = 12;
+const currentPage = ref(1);
+const totalPages = computed(() => Math.max(1, Math.ceil(productos.value.length / pageSize)));
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return productos.value.slice(start, start + pageSize);
+});
+
+const maxPageButtons = 7;
+const visiblePages = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const maxButtons = maxPageButtons;
+  if (total <= maxButtons) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const pages = [];
+  const side = Math.floor((maxButtons - 3) / 2);
+  let start = Math.max(2, current - side);
+  let end = Math.min(total - 1, current + side);
+
+  const needed = (maxButtons - 2) - (end - start + 1);
+  if (needed > 0) {
+    if (start > 2) {
+      start = Math.max(2, start - needed);
+    } else if (end < total - 1) {
+      end = Math.min(total - 1, end + needed);
+    }
+  }
+
+  pages.push(1);
+  if (start > 2) pages.push('left-ellipsis');
+  for (let p = start; p <= end; p++) pages.push(p);
+  if (end < total - 1) pages.push('right-ellipsis');
+  pages.push(total);
+  return pages;
+});
+
 const categorias = ref([]); // Lista dinámica de categorías
 const loading = ref(true);
 const error = ref(null);
@@ -111,6 +164,8 @@ const fetchCategorias = async () => {
 const fetchProductos = async () => {
     loading.value = true;
     error.value = null;
+  // resetear la página cuando se recargan los productos por cambios de filtro
+  currentPage.value = 1;
     
     // Construimos los parámetros de la URL
     const params = {
@@ -143,7 +198,7 @@ const fetchProductos = async () => {
             data.sort((a, b) => b.precioBase - a.precioBase);
         }
         
-        productos.value = data;
+  productos.value = data;
 
     } catch (err) {
         console.error("Error al cargar productos:", err);
@@ -164,11 +219,32 @@ watch([selectedCategoria, minPrice, maxPrice, sortBy], () => {
     fetchProductos();
 });
 
+watch(totalPages, (n) => {
+  if (currentPage.value > n) currentPage.value = n;
+});
+
+const goToPage = (p) => {
+  currentPage.value = p;
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) currentPage.value -= 1;
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) currentPage.value += 1;
+};
+
 // --- CICLO DE VIDA ---
 onMounted(() => {
     fetchCategorias(); // Cargar categorías primero
     fetchProductos();  // Luego cargar productos
 });
+
+const router = useRouter();
+const openProduct = (producto) => {
+  router.push({ name: 'detalle-producto', query: { id: producto.idproducto } });
+};
 </script>
 
 <style scoped>
@@ -317,6 +393,27 @@ onMounted(() => {
   border-radius: 5px;
 }
 
+.pagination-btn.active {
+  background-color: #AAD500;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 6px;
+}
+
+.pagination-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: #666;
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .products-grid {
@@ -368,8 +465,12 @@ onMounted(() => {
     color: red;
     font-weight: bold;
 }
+.btn-container {
+  display: flex;
+  justify-content: center;
+}
+
 .btn-agregar {
-    /* Estilos del botón de tu respuesta anterior */
     background-color: #AAD500;
     color: white;
     border: none;
@@ -380,5 +481,4 @@ onMounted(() => {
     margin-bottom: 10px;
 }
 
-/* ... (Asegúrate de que tus estilos .product-card y .products-grid se vean bien) */
 </style>

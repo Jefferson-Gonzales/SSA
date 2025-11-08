@@ -6,21 +6,21 @@
 
     <router-view/>
     <FloatingAssistantButton v-if="!isChatOpen" @open-chat="isChatOpen = true"/>
-    <ChatBot v-if="isChatOpen" @close-chat="isChatOpen = false"/>
+    <ChatBotView v-if="isChatOpen" @close-chat="isChatOpen = false"/>
   </div>
 </template>
 
 <script>
 import HeaderNav from '@/components/HeaderNav.vue'
 import FloatingAssistantButton from './components/FloatingAssistantButton.vue';
-import ChatBot from './views/ChatBot.vue';
+import ChatBotView from './views/ChatBotView.vue';
 
 
 export default {
   components: {
     HeaderNav,
     FloatingAssistantButton,
-    ChatBot
+    ChatBotView
   },
   data() {
     return {

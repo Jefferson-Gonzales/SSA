@@ -3,10 +3,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import CatalogoView from '../views/CatalogoView.vue'
 import CarritoView from '../views/CarritoView.vue'
-import Ofertas from '@/views/Ofertas.vue'
 import RegistroView from '@/views/RegistroView.vue'
 import ForgotPasswordView from '@/views/ForgotPasswordView.vue' 
 import ResetPasswordView from '@/views/ResetPasswordView.vue'
+import DetalleProductoView from '@/views/DetalleProductoView.vue'
+import PersonalizacionView from '@/views/PersonalizacionView.vue'
+import PerfilView from '@/views/PerfilView.vue'
+import OfertasView from '@/views/OfertasView.vue'
 
 
 const routes = [
@@ -18,8 +21,7 @@ const routes = [
   },
   {
         path: '/',
-        redirect: '/login', // <--- Añade la redirección aquí
-        // Nota: Quita 'name: "catalogo"' y 'component: CatalogoView' de esta ruta.
+        redirect: '/login',
     },
   {
     path: '/login',
@@ -34,10 +36,27 @@ const routes = [
     meta: { hideNavbar: true }
   },
   {
+    path: '/personalizacion',
+    name: 'personalizacion',
+    component: PersonalizacionView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/perfil',
+    name: 'perfil',
+    component: PerfilView,
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/catalogo',
     name: 'catalogo',
     component: CatalogoView,
     meta: { requiresAuth: true } // <--- ¡Proteger Carrito!
+  },
+  {
+    path: '/detalle-producto',
+    name: 'detalle-producto',
+    component: DetalleProductoView,
   },
   {
     path: '/carrito',
@@ -48,7 +67,7 @@ const routes = [
   {
     path: '/ofertas',
     name: 'ofertas',
-    component: Ofertas,
+    component: OfertasView,
     meta: { requiresAuth: true } // <--- ¡Proteger Ofertas!
 
   },
@@ -56,6 +75,7 @@ const routes = [
     path: '/forgot-password',
     name: 'forgot-password',
     component: ForgotPasswordView,
+    meta: { hideNavbar: true }
   },
 
   {

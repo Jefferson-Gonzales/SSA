@@ -12,7 +12,7 @@
       <label for="">Contraseña</label>
       <input type="password" v-model="password" placeholder="Tu Contraseña">
       
-      <router-link to="/" class="forgot-password">¿Olvidaste tu contraseña?</router-link>
+      <router-link to="/forgot-password" class="forgot-password">¿Olvidaste tu contraseña?</router-link>
       
       <button class="btnIniciar" @click="login">Iniciar Sesión</button>
       
