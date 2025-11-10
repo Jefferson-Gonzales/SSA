@@ -54,8 +54,8 @@ const routes = [
     meta: { requiresAuth: true } // <--- ¡Proteger Carrito!
   },
   {
-    path: '/detalle-producto',
-    name: 'detalle-producto',
+    path: '/producto/:id',
+    name: 'detalle',
     component: DetalleProductoView,
   },
   {

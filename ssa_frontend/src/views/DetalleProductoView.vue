@@ -1,161 +1,225 @@
 <template>
   <div class="product-details-container">
-    <!-- Product Image Gallery -->
-    <div class="product-gallery">
-      <div class="main-image">
-        <img :src="mainImage" :alt="product.name" />
-      </div>
-      <div class="thumbnail-gallery">
-        <div
-          v-for="(image, index) in product.images"
-          :key="index"
-          class="thumbnail"
-          :class="{ active: mainImage === image }"
-          @click="mainImage = image"
-        >
-          <img :src="image" :alt="`Product view ${index + 1}`" />
-        </div>
-      </div>
+    
+    <div v-if="isLoading" class="loading-state">
+      <p>Cargando detalle del producto...</p>
+    </div>
+    <div v-else-if="error" class="error-state">
+      <h1>¡Ups! No pudimos cargar el producto.</h1>
+      <p>{{ error }}</p>
+      <p>Asegúrate de que tu servidor Spring Boot esté corriendo en `http://localhost:8080`.</p>
     </div>
 
-    <!-- Product Information -->
-    <div class="product-info">
-      <h1>{{ product.name }}</h1>
+    <template v-else-if="product">
       
-      
-      <div class="price-section">
-          <span class="price">S/{{ product.price }}</span>
-          <span v-if="product.originalPrice" class="original-price">S/{{ product.originalPrice }}</span>
-        </div>
-        
-        <p class="description">{{ product.description }}</p>
-        
-        <div class="rating">
-          <span class="stars">★★★★★</span>
-          <span class="review-count">({{ product.reviews }} Reseñas)</span>
-        </div>
-      <!-- Size Selector -->
-      <div class="size-selector">
-        <label>Talla:</label>
-        <div class="size-options">
-          <button
-            v-for="size in product.sizes"
-            :key="size"
-            class="size-btn"
-            :class="{ active: selectedSize === size }"
-            @click="selectedSize = size"
-          >
-            {{ size }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Color Selector -->
-      <div class="color-selector">
-        <label>Color:</label>
-        <div class="color-options">
-          <button
-            v-for="color in product.colors"
-            :key="color.name"
-            class="color-btn"
-            :class="{ active: selectedColor === color.name }"
-            @click="selectedColor = color.name"
-            :style="{ backgroundColor: color.value }"
-            :title="color.name"
+      <div class="product-image-display">
+        <div class="main-image">
+          <img 
+            :src="product.imagenUrl || 'https://placehold.co/800x800/e8e8e8/777777?text=SIN+IMAGEN'" 
+            :alt="product.nombre"
+            onerror="this.onerror=null;this.src='https://placehold.co/800x800/e8e8e8/777777?text=SIN+IMAGEN';"
           />
         </div>
-      </div>
+        </div>
 
-      <!-- Quantity Selector -->
-      <div class="quantity-selector">
-        <label>Cantidad:</label>
-        <div class="quantity-control">
-          <button @click="quantity = Math.max(1, quantity - 1)">−</button>
-          <input v-model.number="quantity" type="number" min="1" />
-          <button @click="quantity++">+</button>
+      <div class="product-info">
+        
+        <h1>{{ product.nombre }}</h1>
+        <span class="text-sm font-medium text-gray-500 uppercase">{{ product.marca }}</span>
+        
+        <div class="price-section">
+            <span class="price">S/{{ product.precioBase.toFixed(2) }}</span>
+            </div>
+          
+        <p class="description">{{ product.descripcion }}</p>
+          
+        <div class="rating">
+          <span class="stars">{{ formattedRating }}</span>
+          <span class="review-count">({{ product.numeroResenas }} Reseñas)</span>
+        </div>
+        
+        <div class="quantity-selector">
+          <label>Cantidad (Stock: {{ product.stockActual }}):</label>
+          <div class="quantity-control">
+            <button @click="decrementQuantity" :disabled="quantity <= 1 || product.stockActual === 0">−</button>
+            <input 
+              v-model.number="quantity" 
+              type="number" 
+              min="1" 
+              :max="product.stockActual" 
+              :disabled="product.stockActual === 0"
+            />
+            <button @click="incrementQuantity" :disabled="quantity >= product.stockActual || product.stockActual === 0">+</button>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button 
+            class="add-to-cart-btn" 
+            @click="addToCart" 
+            :disabled="product.stockActual === 0 || quantity === 0"
+          >
+            {{ product.stockActual === 0 ? 'Agotado' : 'Agregar al carrito' }}
+          </button>
+          <button class="wishlist-btn" @click="toggleWishlist">
+            ♡
+          </button>
+        </div>
+
+        <div class="details-section">
+          <h3>Detalles del Producto</h3>
+          <ul>
+            <li><strong>Categoría:</strong> {{ product.categoria.nombre }}</li>
+            <li><strong>Stock Total:</strong> {{ product.stockActual }}</li>
+            <li><strong>SKU:</strong> {{ product.sku }}</li> 
+          </ul>
+        </div>
+
+        <div class="shipping-section">
+          <div class="shipping-item">
+            <span class="icon">🚚</span>
+            <span>Envío gratuito en pedidos superiores a 50 soles.</span>
+          </div>
+          <div class="shipping-item">
+            <span class="icon">↩️</span>
+            <span>Devoluciones fáciles en 30 días</span>
+          </div>
         </div>
       </div>
-
-      <!-- Action Buttons -->
-      <div class="action-buttons">
-        <button class="add-to-cart-btn" @click="addToCart">
-          Agregar al carrito
-        </button>
-        <button class="wishlist-btn" @click="toggleWishlist">
-          ♡
-        </button>
-      </div>
-
-      <!-- Product Details -->
-      <div class="details-section">
-        <h3>Detalles del Producto</h3>
-        <ul>
-          <li><strong>Material:</strong> {{ product.material }}</li>
-          <li><strong>Stock:</strong> {{ product.stock }}</li>
-          <li><strong>SKU:</strong> {{ product.sku }}</li>
-        </ul>
-      </div>
-
-      <!-- Shipping & Returns -->
-      <div class="shipping-section">
-        <div class="shipping-item">
-          <span class="icon">🚚</span>
-          <span>Envío gratuito en pedidos superiores a 50 soles.</span>
-        </div>
-        <div class="shipping-item">
-          <span class="icon">↩️</span>
-          <span>Devoluciones fáciles en 30 días</span>
-        </div>
-      </div>
-    </div>
+    </template>
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      mainImage: 'https://m.media-amazon.com/images/I/41Nl8Zj0e9L._AC_UY1000_.jpg',
-      selectedSize: 'M',
-      selectedColor: 'Cream',
-      quantity: 1,
-      product: {
-        name: 'Camiseta de algodón premium',
-        price: 45.99,
-        originalPrice: 59.99,
-        reviews: 128,
-        description: 'Camiseta de algodón cómoda y con estilo, perfecta para el día a día. Confeccionada en algodón 100% orgánico con un corte holgado.',
-        images: [
-          'https://pstyletienda.com/wp-content/uploads/2019/11/Camiseta-Hombre-cuello-redondo-basica-Gris-Jaspe-algodon-peinado-Gildan-64000-1.jpg',
-          'https://pontela.com.co/187-thickbox_default/camiseta-gildan.jpg',
-          'https://static-catalog.tiendamia.com/marketplace_images/production/product_23047_mirakl_image_1.jpg',
-        ],
-        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-        colors: [
-          { name: 'Cream', value: '#F5E6D3' },
-          { name: 'Black', value: '#1A1A1A' },
-          { name: 'Navy', value: '#2C3E50' },
-          { name: 'Gray', value: '#A0A0A0' },
-        ],
-        material: '100% Algodon Organico',
-        stock: 5,
-        fit: 'Relaxed Fit',
-        sku: 'TSH-001-CREAM',
-      },
-    };
-  },
-  methods: {
-    addToCart() {
-      alert(`Added ${this.quantity} item(s) to cart - Size: ${this.selectedSize}, Color: ${this.selectedColor}`);
-    },
-    toggleWishlist() {
-      alert('Added to wishlist!');
-    },
-  },
+<script setup>
+import {ref, onMounted, computed, watch} from 'vue';
+import { useRoute } from 'vue-router';    
+import axios from 'axios';
+
+// Se ELIMINA la definición de emptyVariant
+// Se ELIMINA la definición de emptyProduct (comentada)
+
+// --- Estados Reactivos ---
+const route = useRoute();
+const product = ref(null);
+// Se ELIMINA selectedVariant
+const quantity = ref(1);
+// Se ELIMINA mainImage (usaremos product.imagenUrl directamente en el template)
+const isLoading = ref(true);
+const error = ref(null);
+
+const API_URL = 'http://localhost:8080/api/productos/'; 
+const productId = computed(() => route.params.id);
+
+// --- Lógica Computada Simplificada ---
+
+// Se ELIMINA productImages
+
+// Se ELIMINA finalPrice
+
+/**
+ * Formatea la calificación promedio como estrellas (simple).
+ */
+const formattedRating = computed(() => {
+  if (!product.value || product.value.calificacionPromedio == null) return '☆☆☆☆☆';
+  const rating = Math.round(product.value.calificacionPromedio);
+  return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+});
+
+
+// --- Funciones de Fetching y Lógica ---
+
+/**
+ * Realiza la llamada a la API para obtener el detalle del producto.
+ */
+const fetchProductDetail = async (id) => {
+  isLoading.value = true;
+  error.value = null;
+  product.value = null;
+
+  if (!id) {
+    error.value = 'ID de producto no proporcionado en la URL.';
+    isLoading.value = false;
+    return;
+  }
+  
+  try {
+    const response = await axios.get(`${API_URL}${id}`);
+    product.value = response.data;
+    // Asumimos que product.sku existe
+    product.value.sku = product.value.sku || 'N/A'; 
+    
+    // Inicializar la cantidad: si hay stock, 1; si no, 0.
+    if (product.value.stockActual < 1) {
+        quantity.value = 0;
+    } else {
+        quantity.value = 1;
+    }
+    
+  } catch (err) {
+    console.error("Error fetching product detail:", err);
+    if (err.response && err.response.status === 404) {
+          error.value = `Producto no encontrado (ID: ${id}).`;
+    } else {
+        error.value = 'Ocurrió un error al conectar con el servidor o la API está caída.';
+    }
+  } finally {
+    isLoading.value = false;
+  }
 };
+
+// Se ELIMINA selectVariant
+
+/**
+ * Lógica para añadir al carrito (usando stock general).
+ */
+const addToCart = () => {
+  // Ahora solo usa el stock y nombre del producto principal
+  if (product.value.stockActual > 0 && quantity.value > 0 && quantity.value <= product.value.stockActual) {
+    alert(`Añadido ${quantity.value}x ${product.value.nombre} al carrito.`);
+  } else {
+    alert('No se puede agregar. La cantidad no es válida o el producto está agotado.');
+  }
+};
+
+const toggleWishlist = () => {
+    alert('Agregado a lista de deseos!');
+};
+
+const incrementQuantity = () => {
+    // Usar stockActual
+    if (quantity.value < product.value.stockActual) {
+        quantity.value++;
+    }
+};
+
+const decrementQuantity = () => {
+    if (quantity.value > 1) {
+        quantity.value--;
+    }
+};
+
+// --- Ciclo de Vida ---
+
+// Ejecutar el fetch al cargar el componente
+onMounted(() => {
+    if (productId.value) {
+        fetchProductDetail(productId.value);
+    } else {
+        error.value = 'Ruta inválida: Falta el ID del producto.';
+        isLoading.value = false;
+    }
+});
+
+// Observar el ID de la ruta por si se navega entre productos
+watch(productId, (newId) => {
+    if (newId) {
+        fetchProductDetail(newId);
+    }
+});
 </script>
 
 <style scoped>
+/* Estilos existentes */
 * {
   margin: 0;
   padding: 0;
@@ -167,58 +231,51 @@ export default {
   gap: 40px;
   padding: 40px;
   margin: 0 auto;
+  max-width: 1200px; 
   background-color: #f9f9f9;
 }
 
-/* Product Gallery */
-.product-gallery {
+/* Manejo de Estado */
+.loading-state, .error-state {
+    padding: 40px;
+    text-align: center;
+    background-color: white;
+    margin: 20px auto;
+    border-radius: 10px;
+    max-width: 600px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.error-state h1 { color: #d9534f; margin-bottom: 10px; }
+
+/* Product Image Display (Se renombra para mayor claridad) */
+.product-image-display {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
+/* Se ELIMINA .product-gallery y se sustituye por .product-image-display */
 
 .main-image {
   width: 100%;
-  height: 70%;
+  height: auto; 
+  aspect-ratio: 4/5; 
   background-color: white;
   border-radius: 12px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .main-image img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; 
 }
 
-.thumbnail-gallery {
-  display: flex;
-  gap: 10px;
-}
-
-.thumbnail {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-}
-
-.thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.thumbnail.active {
-  border-color: #C5E01B;
-}
+/* Se ELIMINA .thumbnail-gallery, .thumbnail y .thumbnail.active */
 
 /* Product Info */
 .product-info {
@@ -262,11 +319,7 @@ export default {
   color: #C5E01B;
 }
 
-.original-price {
-  font-size: 17px;
-  color: #999;
-  text-decoration: line-through;
-}
+/* Se ELIMINA .original-price */
 
 .description {
   color: #666;
@@ -275,71 +328,7 @@ export default {
   text-align: left;
 }
 
-/* Size Selector */
-.size-selector,
-.color-selector {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  text-align: left;
-}
-
-.size-selector label,
-.color-selector label {
-  font-weight: 600;
-  color: #1a1a1a;
-  font-size: 14px;
-}
-
-.size-options {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.size-btn {
-  padding: 10px 16px;
-  border: 2px solid #ddd;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s;
-}
-
-.size-btn:hover {
-  border-color: #C5E01B;
-}
-
-.size-btn.active {
-  background-color: #C5E01B;
-  border-color: #C5E01B;
-  color: #1a1a1a;
-}
-
-/* Color Selector */
-.color-options {
-  display: flex;
-  gap: 12px;
-}
-
-.color-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 3px solid transparent;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.color-btn:hover {
-  border-color: #ddd;
-  transform: scale(1.1);
-}
-
-.color-btn.active {
-  border-color: #1a1a1a;
-}
+/* Se ELIMINAN .size-selector, .color-selector, .size-options, .size-btn y sus estados */
 
 /* Quantity Selector */
 .quantity-selector {
@@ -374,8 +363,12 @@ export default {
   transition: background 0.3s;
 }
 
-.quantity-control button:hover {
+.quantity-control button:hover:not(:disabled) {
   background-color: #f0f0f0;
+}
+.quantity-control button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .quantity-control input {
@@ -412,8 +405,13 @@ export default {
   transition: all 0.3s;
 }
 
-.add-to-cart-btn:hover {
+.add-to-cart-btn:hover:not(:disabled) {
   background-color: #b3d00f;
+}
+
+.add-to-cart-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .wishlist-btn {
