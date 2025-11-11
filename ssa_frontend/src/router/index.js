@@ -10,6 +10,7 @@ import DetalleProductoView from '@/views/DetalleProductoView.vue'
 import PersonalizacionView from '@/views/PersonalizacionView.vue'
 import PerfilView from '@/views/PerfilView.vue'
 import OfertasView from '@/views/OfertasView.vue'
+import CheckoutView from '@/views/CheckoutView.vue'
 
 
 const routes = [
@@ -54,8 +55,8 @@ const routes = [
     meta: { requiresAuth: true } // <--- ¡Proteger Carrito!
   },
   {
-    path: '/detalle-producto',
-    name: 'detalle-producto',
+    path: '/productos/:id',
+    name: 'detalle',
     component: DetalleProductoView,
   },
   {
@@ -82,6 +83,12 @@ const routes = [
     path: '/reset-password',
     name: 'reset-password',
     component: ResetPasswordView,
+  },
+
+  {
+    path: '/CheckoutView',
+    name: 'CheckoutView',
+    component: CheckoutView,
   },
 ]
 
