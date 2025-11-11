@@ -1,96 +1,169 @@
 <template>
   <div class="chat-wrapper" role="dialog" aria-label="Asistente de compras">
     <div class="chat-container">
-    <!-- Chat Header -->
-    <div class="chat-header">
-      <div class="header-content">
-        <img width="45" height="45" src="../assets/ic_bot.png" alt="chatbot"/>
-        <div class="header-info">
-          <h3 class="header-title">Asistente de compras</h3>
-          <span class="status-badge">Online</span>
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="header-content">
+          <img width="45" height="45" src="../assets/ic_bot.png" alt="chatbot"/>
+          <div class="header-info">
+            <h3 class="header-title">Asistente de compras</h3>
+            <span class="status-badge">Online</span>
+          </div>
         </div>
-      </div>
-      <button type="button" class="close-btn" @click="closeChat" aria-label="Cerrar chat">×</button>
-    </div>
-
-    <!-- Messages Container -->
-    <div class="messages-container">
-      <!-- Assistant Message -->
-      <div class="message-group assistant">
-        <img width="48" height="48" src="../assets/ic_bot.png" alt="Assistant" class="message-avatar">
-        <div class="message-bubble assistant-message">
-          <p>Hola, soy tu asistente de compras. ¿En qué puedo ayudarte hoy?</p>
-        </div>
+        <button type="button" class="close-btn" @click="closeChat" aria-label="Cerrar chat">×</button>
       </div>
 
-      <!-- User Message -->
-      <div class="message-group user">
-        <div class="message-bubble user-message">
-          <p>Estoy buscando un nuevo par de zapatillas para correr.</p>
+      <!-- Messages Container -->
+      <div class="messages-container" ref="messagesContainer">
+        <!-- Loop through messages -->
+        <div 
+          v-for="(message, index) in messages" 
+          :key="index"
+          :class="['message-group', message.type]"
+        >
+          <!-- Assistant messages -->
+          <template v-if="message.type === 'assistant'">
+            <img width="48" height="48" src="../assets/ic_bot.png" alt="Assistant" class="message-avatar">
+            <div class="message-bubble assistant-message">
+              <p>{{ message.text }}</p>
+            </div>
+          </template>
+
+          <!-- User messages -->
+          <template v-else>
+            <div class="message-bubble user-message">
+              <p>{{ message.text }}</p>
+            </div>
+            <img width="100" height="100" src="https://img.icons8.com/stickers/100/user-male-circle.png" alt="User" class="message-avatar">
+          </template>
         </div>
-        <img width="100" height="100" src="https://img.icons8.com/stickers/100/user-male-circle.png" alt="User" class="message-avatar">
+
+        <!-- Typing Indicator -->
+        <div v-if="isTyping" class="message-group assistant">
+          <img width="48" height="48" src="../assets/ic_bot.png" alt="Assistant" class="message-avatar">
+          <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
       </div>
 
-      <!-- Assistant Message -->
-      <div class="message-group assistant">
-        <img width="48" height="48" src="../assets/ic_bot.png" alt="Assistant" class="message-avatar">
-        <div class="message-bubble assistant-message">
-          <p>Claro, ¿qué tipo de zapatillas para correr estás buscando? ¿Alguna marca o característica en particular?</p>
-        </div>
+      <!-- Input Area -->
+      <div class="input-area">
+        <input
+          type="text"
+          placeholder="Escribe tu mensaje..."
+          class="message-input"
+          v-model="messageText"
+          @keyup.enter="sendMessage"
+          :disabled="isTyping"
+          aria-label="Escribe tu mensaje"
+        />
+        <button 
+          type="button" 
+          class="audio-btn" 
+          @click="startAudio" 
+          aria-label="Enviar audio" 
+          style="margin-right: 8px;"
+          :disabled="isTyping"
+        >
+          <img width="27" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAC5klEQVR4nO2Yz2oUQRDGZw0aNNGTD2BU9OBR1yTmsEZBPYh3xaDgUVHQg+ApiEhACSqJUcEnEFHIQZIoBPQVdPUQMIp/MCCYSGQDm58U1Cxlu87OLD2b2TUfNAPVXVXf113du91BsIoWA3AAuA8UgZ/aimrrD7IKYCvwgtp4LmODLAHoBeaIDxnbG2QBwDaHfAkYAbqBDm0icBRYckR0ZUGALZsvwO6IsXkdE2KysWyrb1g783ti+OSdldjfGLbVyTwwREYS+N01fvfSZRlN5K0h0p3AT/ZEiGK6LKOJLBginQn8Nhq/hXRZRhOpoA7fGXWdSYdd+gK2A5fkmw67lAVkAvzPK0AL7IEK0mEXj8SiclhsVgEXgHfyzbQA4DrwS74eY1YVkEauQP+oCUoNEFDynSsqWRuwS74eY1bgg3utZONqHm9WAWU1lz3GnFfzvA/uqc1WRMwTwCv5+uAe+bfZzNYf9hjxNhm/H96IRiSUsz7EDmOX9556LjT7jN+bKn3HgJxPAdMm4RFjl8eqEKMJ4o0ZvzFj7wOW1X7Wp4Bhk/C2sffXcanf61zqC/+4Y1/zKaBgAr+3576+tIWQJ5N8DfJfzfgJ07cO+FZPScYR0OY8Xp0yfV1O35K+Okgtd2rr07KxMy9kt5g450zfrNc9oAmuOAk6TF9PwqdFId9j/Dc7K3PeK3lNsh74aJI8trOkKzEZg/yEM/NrgGdOibZ7F6DJjjtkbrhLLS9t8lglx6P+fkh7rSVUqFKaD028sj3l0hJx0xHxyJZTgjhSNk+cWFfTYf33rD11En8ATks5xPBvB844NY+uWk1/nyLclQjr9w5wGNhpntdlfxwFbgGfHZ9lYMj7qZNgT3yifswChxpO3BGxQY/YuYTELyb5A9iosipoaU07gr4DL/W+exBYG2QdwKARMBg0G1gV0CDI8QecBC47bcoImKrSLz65LAgYoH4MrDT/lhCQ03IYStiyUUIrjd+bjgyI3NkBgwAAAABJRU5ErkJggg==" alt="microphone">
+        </button>
+        <button 
+          type="button" 
+          class="send-btn" 
+          @click="sendMessage" 
+          :disabled="isTyping"
+          aria-label="Enviar mensaje"
+        >
+          <span class="arrow">➤</span>
+        </button>
       </div>
-
-      <!-- Typing Indicator -->
-      <div class="message-group assistant">
-        <img width="48" height="48" src="../assets/ic_bot.png" alt="Assistant" class="message-avatar">
-        <div class="typing-indicator">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Input Area -->
-    <div class="input-area">
-      <input
-        type="text"
-        placeholder="Escribe tu mensaje..."
-        class="message-input"
-        v-model="messageText"
-        @keyup.enter="sendMessage"
-        aria-label="Escribe tu mensaje"
-      />
-      <button type="button" class="audio-btn" @click="startAudio" aria-label="Enviar audio" style="margin-right: 8px;">
-        <img width="27" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAC5klEQVR4nO2Yz2oUQRDGZw0aNNGTD2BU9OBR1yTmsEZBPYh3xaDgUVHQg+ApiEhACSqJUcEnEFHIQZIoBPQVdPUQMIp/MCCYSGQDm58U1Cxlu87OLD2b2TUfNAPVXVXf113du91BsIoWA3AAuA8UgZ/aimrrD7IKYCvwgtp4LmODLAHoBeaIDxnbG2QBwDaHfAkYAbqBDm0icBRYckR0ZUGALZsvwO6IsXkdE2KysWyrb1g783ti+OSdldjfGLbVyTwwREYS+N01fvfSZRlN5K0h0p3AT/ZEiGK6LKOJLBginQn8Nhq/hXRZRhOpoA7fGXWdSYdd+gK2A5fkmw67lAVkAvzPK0AL7IEK0mEXj8SiclhsVgEXgHfyzbQA4DrwS74eY1YVkEauQP+oCUoNEFDynSsqWRuwS74eY1bgg3utZONqHm9WAWU1lz3GnFfzvA/uqc1WRMwTwCv5+uAe+bfZzNYf9hjxNhm/H96IRiSUsz7EDmOX9556LjT7jN+bKn3HgJxPAdMm4RFjl8eqEKMJ4o0ZvzFj7wOW1X7Wp4Bhk/C2sffXcanf61zqC/+4Y1/zKaBgAr+3576+tIWQJ5N8DfJfzfgJ07cO+FZPScYR0OY8Xp0yfV1O35K+Okgtd2rr07KxMy9kt5g450zfrNc9oAmuOAk6TF9PwqdFId9j/Dc7K3PeK3lNsh74aJI8trOkKzEZg/yEM/NrgGdOibZ7F6DJjjtkbrhLLS9t8lglx6P+fkh7rSVUqFKaD028sj3l0hJx0xHxyJZTgjhSNk+cWFfTYf33rD11En8ATks5xPBvB844NY+uWk1/nyLclQjr9w5wGNhpntdlfxwFbgGfHZ9lYMj7qZNgT3yifswChxpO3BGxQY/YuYTELyb5A9iosipoaU07gr4DL/W+exBYG2QdwKARMBg0G1gV0CDI8QecBC47bcoImKrSLz65LAgYoH4MrDT/lhCQ03IYStiyUUIrjd+bjgyI3NkBgwAAAABJRU5ErkJggg==" alt="microphone">
-      </button>
-      <button type="button" class="send-btn" @click="sendMessage" aria-label="Enviar mensaje">
-        <span class="arrow">➤</span>
-      </button>
     </div>
   </div>
-</div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'ChatBot',
   emits: ['close-chat'],
   data() {
-    return { messageText: '' }
+    return { 
+      messageText: '',
+      messages: [
+        {
+          type: 'assistant',
+          text: 'Hola, soy tu asistente de compras. ¿En qué puedo ayudarte hoy?',
+          timestamp: new Date()
+        }
+      ],
+      isTyping: false,
+      apiUrl: 'http://localhost:8080/api/chatbot/message'
+    }
   },
   methods: {
     closeChat() {
       this.$emit('close-chat')
     },
-    sendMessage() {
+    
+    async sendMessage() {
       const text = this.messageText.trim()
-      if (!text) return
-      console.log('Message sent:', text)
+      if (!text || this.isTyping) return
+
+      // Agregar mensaje del usuario
+      this.messages.push({
+        type: 'user',
+        text: text,
+        timestamp: new Date()
+      })
+
       this.messageText = ''
+      this.isTyping = true
+
+      try {
+        // Llamar al backend
+        const response = await axios.post(this.apiUrl, {
+          message: text
+        })
+
+        // Agregar respuesta del bot
+        this.messages.push({
+          type: 'assistant',
+          text: response.data.response,
+          timestamp: new Date()
+        })
+      } catch (error) {
+        console.error('Error al enviar mensaje:', error)
+        this.messages.push({
+          type: 'assistant',
+          text: 'Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.',
+          timestamp: new Date()
+        })
+      } finally {
+        this.isTyping = false
+        this.$nextTick(() => {
+          this.scrollToBottom()
+        })
+      }
     },
+
+    scrollToBottom() {
+      const container = this.$refs.messagesContainer
+      if (container) {
+        container.scrollTop = container.scrollHeight
+      }
+    },
+
     startAudio() {
-      alert('Funcionalidad de audio próximamente');
+      alert('Funcionalidad de audio próximamente')
     }
+  },
+
+  mounted() {
+    this.scrollToBottom()
   }
 }
 </script>
@@ -105,12 +178,30 @@ export default {
   justify-content: center;
   padding: 5px;
   border-radius: 50px;
+  transition: all 0.2s;
 }
-.audio-btn:hover {
+
+.audio-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.audio-btn:hover:not(:disabled) {
   background-color: #a3d340;
   color: #ffffff;
   border-radius: 60px;
 }
+
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.message-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -140,7 +231,6 @@ export default {
   transition: transform 160ms ease, opacity 160ms ease;
 }
 
-/* Header */
 .chat-header {
   background: white;
   padding: 16px;
@@ -199,7 +289,6 @@ export default {
   color: #333;
 }
 
-/* Messages Container */
 .messages-container {
   flex: 1;
   overflow-y: auto;
@@ -253,7 +342,6 @@ export default {
   margin: 0;
 }
 
-/* Typing Indicator */
 .typing-indicator {
   display: flex;
   gap: 4px;
@@ -290,7 +378,6 @@ export default {
   }
 }
 
-/* Input Area */
 .input-area {
   background: white;
   padding: 12px 16px;
@@ -331,7 +418,7 @@ export default {
   transition: background 0.2s;
 }
 
-.send-btn:hover {
+.send-btn:hover:not(:disabled) {
   background: #a3d340;
 }
 
@@ -340,7 +427,6 @@ export default {
   color: white;
 }
 
-/* Scrollbar Styling */
 .messages-container::-webkit-scrollbar {
   width: 6px;
 }
