@@ -56,7 +56,8 @@
             <h3 class="product-name">{{ producto.nombre }}</h3>
             <p class="product-price">S/. {{ parseFloat(producto.precioBase).toFixed(2) }}</p>
             <div class="btn-container">
-              <button class="btn-agregar" @click.stop>Añadir al Carrito</button>
+              <!-- Llamada a la nueva función addToCart, se pasa el producto completo -->
+              <button class="btn-agregar" @click.stop="addToCart(producto)">Añadir al Carrito</button>
             </div>
 
           </div>
@@ -80,6 +81,19 @@
       </section>
     </div>
     <FloatingAssistantButton />
+
+    <!-- Modal de Confirmación de Producto Añadido (Recomendado sobre alert()) -->
+    <div v-if="showSuccessMessage" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <svg class="w-12 h-12 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <h3 class="text-lg font-bold mb-2 text-gray-800">¡Producto Añadido!</h3>
+            <p class="text-sm text-gray-600">El artículo ha sido agregado a tu carrito.</p>
+            <button @click="showSuccessMessage = false" class="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition duration-150">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
   </div>
 </template>
 
@@ -90,6 +104,10 @@ import apiClient from '@/services/api'; // Cliente para productos (requiere JWT)
 import axios from 'axios';             // Usaremos axios directamente para la categoría (ruta pública)
 import { useRouter } from 'vue-router';
 import FloatingAssistantButton from '@/components/FloatingAssistantButton.vue';
+
+// --- Constante de localStorage ---
+const LOCAL_STORAGE_KEY = 'SAGA_SHOPPING_CART';
+
 
 const productos = ref([]);
 const pageSize = 12;
@@ -132,6 +150,7 @@ const visiblePages = computed(() => {
 const categorias = ref([]); // Lista dinámica de categorías
 const loading = ref(true);
 const error = ref(null);
+const showSuccessMessage = ref(false);
 
 // **ESTADOS DE FILTRO** (Valores iniciales)
 const selectedCategoria = ref(null); // null = Todas las categorías
@@ -141,6 +160,75 @@ const sortBy = ref('relevante'); // Criterio de ordenación
 
 // Rango máximo para el slider (ajusta según tus precios máximos reales)
 const MAX_PRICE_SLIDER = 1000; 
+
+// --- FUNCIONES DE MANEJO DEL CARRITO (NUEVAS) ---
+
+/** * Carga el carrito desde localStorage. 
+ * Formato esperado: [{ id: number, name: string, price: number, quantity: number, ... }]
+ */
+const loadCart = () => {
+    try {
+        const storedCart = localStorage.getItem(LOCAL_STORAGE_KEY);
+        return storedCart ? JSON.parse(storedCart) : [];
+    } catch (error) {
+        console.error("Error al cargar el carrito de localStorage:", error);
+        return [];
+    }
+};
+
+/** Guarda el carrito actual en localStorage. */
+const saveCart = (cart) => {
+    try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cart));
+    } catch (error) {
+        console.error("Error al guardar el carrito en localStorage:", error);
+    }
+};
+
+/** * Añade un producto al carrito, manejando si ya existe o si es nuevo.
+ * @param {Object} producto - El objeto producto de tu API.
+ */
+const addToCart = (producto) => {
+    // 1. Cargar el carrito actual
+    const currentCart = loadCart();
+
+    // 2. Definir un ID único para el producto en el carrito. Usamos idproducto.
+    const uniqueId = producto.idproducto;
+    
+    // 3. Buscar si el producto ya existe en el carrito
+    const existingItemIndex = currentCart.findIndex(item => item.id === uniqueId);
+
+    if (existingItemIndex !== -1) {
+        // A. Si existe, solo incrementa la cantidad
+        currentCart[existingItemIndex].quantity += 1;
+        console.log(`Producto ${producto.nombre} encontrado. Cantidad incrementada.`);
+
+    } else {
+        // B. Si no existe, crea el nuevo objeto de item del carrito
+        // Asegúrate de que el formato coincida con lo que espera CarritoView.vue
+        const newItem = {
+            id: uniqueId,                       // CLAVE CRUCIAL: 'id' (debe ser único)
+            name: producto.nombre,              // CLAVE CRUCIAL: 'name'
+            price: parseFloat(producto.precioBase), // CLAVE CRUCIAL: 'price' (como número)
+            quantity: 1,                       // CLAVE CRUCIAL: 'quantity'
+            image: producto.imagenUrl,          // CLAVE CRUCIAL: 'image'
+            size: 'N/A',                       // CLAVE CRUCIAL: 'size' (o usa un valor real si aplica)
+            // Puedes añadir más campos aquí si los necesitas
+        };
+        currentCart.push(newItem);
+        console.log(`Producto ${producto.nombre} añadido por primera vez.`);
+    }
+
+    // 4. Guardar el carrito actualizado
+    saveCart(currentCart);
+    
+    // 5. Mostrar un mensaje de éxito
+    showSuccessMessage.value = true;
+    setTimeout(() => {
+        showSuccessMessage.value = false;
+    }, 2500); // Ocultar el mensaje después de 2.5 segundos
+};
+
 
 // --- FUNCIONES DE CARGA DE DATOS ---
 
@@ -242,8 +330,29 @@ onMounted(() => {
 });
 
 const router = useRouter();
-const openProduct = (producto) => {
+/*const openProduct = (producto) => {
   router.push({ name: 'detalle-producto', query: { id: producto.idproducto } });
+};*/
+
+  const openProduct = (product) => {
+    // 1. ASUMIENDO que el ID se llama 'idProducto' (basado en tus respuestas de API).
+    const productId = product?.idproducto;
+
+    // 2. VERIFICAR que el ID existe antes de navegar.
+    if (productId) {
+        // La navegación es segura.
+        // Asegúrate de que 'detalle' sea el nombre de la ruta que acepta el parámetro ':id' en tu vue-router.
+        router.push({ 
+            name: 'detalle', 
+            params: { id: productId } 
+        });
+    } else {
+        // En caso de que el objeto product no tenga el ID, se imprime un error
+        // y se muestra un mensaje amigable al usuario (en lugar de romper la app).
+        console.error("Error de navegación: El objeto de producto no tiene el campo 'idProducto'.", product);
+        // Opcional: Mostrar una notificación al usuario de que el producto no se puede ver.
+        alert('No se pudo cargar la información del producto. Inténtalo de nuevo.');
+    }
 };
 </script>
 
@@ -480,5 +589,26 @@ const openProduct = (producto) => {
     font-weight: bold;
     margin-bottom: 10px;
 }
+
+/* Nota sobre el modal:
+   Las clases del modal (fixed inset-0 bg-gray-600...) asumen que estás usando Tailwind CSS.
+   Si no usas Tailwind, estas clases no funcionarán y tendrás que definir un CSS similar:*/
+   
+   .fixed { position: fixed; }
+   .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+   .bg-gray-600 { background-color: #4b5563; }
+   .bg-opacity-50 { background-color: rgba(75, 85, 99, 0.5); }
+   .flex, .items-center, .justify-center { display: flex; align-items: center; justify-content: center; }
+   .z-50 { z-index: 50; }
+   
+   /*Y para el contenido del modal:*/
+   .bg-white { background-color: white; }
+   .p-6 { padding: 1.5rem; }
+   .rounded-lg { border-radius: 0.5rem; }
+   .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+   .max-w-sm { max-width: 24rem; }
+   .w-full { width: 100%; }
+   .text-center { text-align: center; }
+
 
 </style>

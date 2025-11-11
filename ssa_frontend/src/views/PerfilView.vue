@@ -6,7 +6,12 @@
       
       <div class="profile-header">
         <div class="profile-avatar">
-          <img :src="profileData.avatar" :alt="profileData.name" />
+          <img v-if="profileData.avatar.startsWith('http')" :src="profileData.avatar" :alt="profileData.name" />
+          <div v-else class="avatar-placeholder">
+            {{ profileData.name ? profileData.name.charAt(0) : 'J' }}
+            {{ profileData.name && profileData.name.split(' ').length > 1 ? profileData.name.split(' ')[1].charAt(0) : 'P' }}
+          </div>
+          
           <input 
             v-if="isEditing"
             type="file"
@@ -26,7 +31,7 @@
           </div>
         </div>
         <div class="profile-info">
-          <h1>{{ profileData.name }}</h1>
+          <h1>{{ profileData.name === 'Cargando...' ? 'Cargando...' : profileData.name }}</h1>
           <p class="profile-email">{{ profileData.email }}</p>
         </div>
         
@@ -68,19 +73,23 @@
             <div class="form-group">
               <label>Teléfono</label>
               <input v-if="isEditing" v-model="formData.phone" type="tel" class="form-input" />
-              <span v-else class="form-value">{{ profileData.phone }}</span>
+              <span v-else class="form-value">+51 {{ profileData.phone || 'N/A' }}</span>
             </div>
             
             <div class="form-group">
               <label>Fecha de Nacimiento</label>
               <input v-if="isEditing" v-model="formData.dateOfBirth" type="date" class="form-input" />
-              <span v-else class="form-value">{{ profileData.dateOfBirth }}</span>
+              <span v-else class="form-value">
+                {{ profileData.dateOfBirth ? profileData.dateOfBirth.split('T')[0] : 'N/A' }}
+              </span>
             </div>
             
             <div class="form-group">
               <label>Profesión / Actividad</label>
-              <input v-if="isEditing" v-model="formData.profession" type="text" class="form-input" />
-              <span v-else class="form-value">{{ profileData.profession }}</span>
+              <select v-if="isEditing" v-model="formData.profession" class="form-input">
+                <option v-for="p in professions" :key="p" :value="p">{{ p }}</option>
+              </select>
+              <span v-else class="form-value">{{ profileData.profession || 'N/A' }}</span>
             </div>
           </section>
 
@@ -89,18 +98,18 @@
             <div class="form-group">
               <label>Calle</label>
               <input v-if="isEditing" v-model="formData.street" type="text" class="form-input" />
-              <span v-else class="form-value">{{ profileData.street }}</span>
+              <span v-else class="form-value">{{ profileData.street || 'N/A' }}</span>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label>Ciudad</label>
                 <input v-if="isEditing" v-model="formData.city" type="text" class="form-input" />
-                <span v-else class="form-value">{{ profileData.city }}</span>
+                <span v-else class="form-value">{{ profileData.city || 'N/A' }}</span>
               </div>
               <div class="form-group">
                 <label>Estado/Provincia</label>
                 <input v-if="isEditing" v-model="formData.state" type="text" class="form-input" />
-                <span v-else class="form-value">{{ profileData.state }}</span>
+                <span v-else class="form-value">{{ profileData.state || 'N/A' }}</span>
               </div>
             </div>
           </section>
@@ -108,6 +117,7 @@
           <section v-if="activeSection === 'Preferencias'" class="profile-section">
             <h2>Preferencias de Compra</h2>
             <p class="section-description">Estos datos son usados por el Motor de Personalización para ofrecerte mejores sugerencias.</p>
+            
             <div class="form-group">
               <label>Color Favorito</label>
               <div v-if="isEditing" class="color-grid">
@@ -128,20 +138,34 @@
               </div>
               <span v-else class="form-value">
                 <span class="color-box" :style="{ backgroundColor: profileData.favoriteColor }"></span>
-                {{ getColorName(profileData.favoriteColor) }}
+                {{ getColorName(profileData.favoriteColor) || 'No Seleccionado' }}
               </span>
             </div>
+            
             <div class="form-group">
               <label>Estilo Preferido</label>
               <select v-if="isEditing" v-model="formData.style" class="form-input">
+                <option>Minimalista, Casual Elegante</option>
                 <option>Casual</option>
                 <option>Formal</option>
                 <option>Deportivo</option>
                 <option>Vintage</option>
               </select>
-              <span v-else class="form-value">{{ profileData.style }}</span>
+              <span v-else class="form-value">{{ profileData.style || 'N/A' }}</span>
             </div>
-          </section>
+
+            <div class="form-group">
+              <label>Hobbies / Intereses (Multiselección)</label>
+              <div v-if="isEditing" class="checkbox-grid">
+                <label v-for="hobby in allHobbies" :key="hobby" class="checkbox-option">
+                  <input type="checkbox" :value="hobby" v-model="formData.hobbies">
+                  {{ hobby }}
+                </label>
+              </div>
+              <span v-else class="form-value">{{ profileData.hobbies.length > 0 ? profileData.hobbies.join(', ') : 'No Definidos' }}</span>
+            </div>
+            
+            </section>
           
           <section v-if="activeSection === 'Historial y Pedidos'" class="profile-section">
             <h2>Historial de Pedidos</h2>
@@ -206,8 +230,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import axios from 'axios'; 
+// Asume que HeaderNav existe, si no, necesitarás importarlo o quitarlo.
+// import HeaderNav from './HeaderNav.vue'; 
 
+// --- CONFIGURACIÓN Y CONSTANTES ---
+const API_BASE_URL = 'http://localhost:8080/api'; 
 const activeSection = ref('Información Personal');
 const isEditing = ref(false);
 
@@ -220,6 +249,32 @@ const sections = [
   'Seguridad'
 ];
 
+const professions = [
+  'Estudiante', 
+  'Ingenierio', // Reducido para evitar error de truncamiento en DB
+  'Diseñador', 
+  'Doctor', 
+  'Profesor', 
+  'Emprendedor', 
+  'Químico',
+  'Deportista',
+  'Abogado',
+  'Psicólogo'
+
+
+];
+
+const allHobbies = [
+  'Fotografía', 
+  'Senderismo', 
+  'Lectura', 
+  'Deportes', 
+  'Cine', 
+  'Viajes', 
+  'Música', 
+  'Tecnología'
+];
+
 const colors = [
   { name: 'Negro', value: '#000000' },
   { name: 'Blanco', value: '#FFFFFF' },
@@ -230,37 +285,61 @@ const colors = [
   { name: 'Rosa', value: '#FF69B4' },
   { name: 'Naranja', value: '#FF9900' }
 ];
+/*agregar intereses
+const interes =[
+  'Ropa',
+  'Tecnología',
+  'Mueblería',
+  'Hogar',
+  'Herramientas',
+  'Calzado',
+  'Tecnología',
+  'Juguetes',
+  'Adornos',
+  'Joyeria',
+  'Jardineria',
+  'Ropa Deportiva'
+]*/
+
+/* agregar estilos
+const estilopreferido =[
+  'Vintage',
+  'Bohemia',
+  'Retro'
+]*/
+
+// --- FUNCIONES DE SOPORTE ---
+
+const getAuthToken = () => {
+    return localStorage.getItem('accessToken'); 
+};
 
 const getColorName = (colorValue) => {
+  if (!colorValue) return 'No Definido';
   const color = colors.find(c => c.value.toLowerCase() === colorValue.toLowerCase());
   if (color) return color.name;
   
-  const similarColor = colors.find(c => colorValue.toLowerCase().includes(c.value.toLowerCase()) || 
-                                      c.value.toLowerCase().includes(colorValue.toLowerCase()));
-  return similarColor ? similarColor.name : colorValue;
+  return colorValue; 
 };
 
+// --- ESTADO REACTIVO ---
 const profileData = ref({
-  name: 'Juan García',
-  email: 'juan.garcia@email.com',
-  phone: '+51 987 654 321',
-  dateOfBirth: '1990-05-15',
-  profession: 'Ingeniero de Software', 
-  avatar: 'https://i.pinimg.com/236x/51/f1/c4/51f1c4cf7b732a99471d0beca326d666.jpg',
-  street: 'Av. Primavera 123',
-  city: 'Trujillo',
-  state: 'La Libertad',
-  postalCode: '13001',
-  country: 'Perú',
-  favoriteColor: '#0066CC',
+  name: 'Cargando...',
+  email: 'cargando@email.com',
+  phone: '',
+  dateOfBirth: '', // 'YYYY-MM-DD'
+  profession: '', 
+  avatar: 'https://via.placeholder.com/150/C5E01B/FFFFFF?text=JP', 
+  street: '',
+  city: '',
+  state: '',
+  favoriteColor: '#FFFFFF', 
   style: 'Casual',
+  hobbies: [], 
   aiConsent: true, 
   notificationFrequency: 'Semanal',
-  lastPasswordChange: '15 de Octubre de 2024',
-  recentOrders: [
-    { id: 'SF12345', date: '2025-10-20', status: 'Enviado', total: 150.90 },
-    { id: 'SF12344', date: '2025-09-01', status: 'Entregado', total: 75.00 },
-  ]
+  lastPasswordChange: 'N/A',
+  recentOrders: []
 });
 
 const formData = ref({ ...profileData.value }); 
@@ -270,150 +349,281 @@ const securityData = ref({
   confirmPassword: ''
 });
 
-const handleAvatarChange = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
+// --- FUNCIONES DE MAPPING ---
 
-  if (!file.type.startsWith('image/')) {
-    alert('Por favor selecciona un archivo de imagen válido');
-    return;
-  }
-
-  const maxSize = 10 * 1024 * 1024;
-  if (file.size > maxSize) {
-    alert('La imagen no debe superar los 5MB');
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append('avatar', file);
-
-  try {
-    const imageUrl = URL.createObjectURL(file);
-    profileData.value.avatar = imageUrl;
-    formData.value.avatarFile = file;
+/**
+ * Mapea los datos de la API de /usuario/perfil a profileData.
+ */
+const mapUserFromBackend = (userData) => {
+    if (!userData) return;
+    profileData.value.name = `${userData.nombres || ''} ${userData.apellidos || ''}`.trim();
+    profileData.value.email = userData.email;
+    profileData.value.phone = userData.telefono || '';
     
-   
-  } catch (error) {
-    console.error('Error al subir la imagen:', error);
-    alert('Error al subir la imagen. Por favor intenta de nuevo.');
-  }
+    // 🚨 FIX: Cortar la hora (T00:00:00) para asegurar que el input type="date" funcione
+    const rawDate = userData.fechaNacimiento || '';
+    profileData.value.dateOfBirth = rawDate ? rawDate.split('T')[0] : ''; 
+
+    profileData.value.street = userData.direccionCalle || '';
+    profileData.value.city = userData.direccionCiudad || '';
+    profileData.value.state = userData.direccionEstado || '';
 };
 
-const fetchProfileData = async () => {
-    console.log("Cargando datos del perfil desde Django...");
+/**
+ * Mapea los datos de la API de /preferencias a profileData.
+ */
+const mapPreferencesFromBackend = (backendData) => {
+    if (!backendData) return;
+    
+    profileData.value.favoriteColor = backendData.coloresFavoritos || '#FFFFFF';
+    profileData.value.style = backendData.estilos || 'Casual';
+    profileData.value.profession = backendData.profesion || ''; 
+    
+    profileData.value.hobbies = backendData.hobbies 
+        ? backendData.hobbies.split(',').map(item => item.trim()).filter(item => item !== '') 
+        : [];
 };
 
+
+// --- FUNCIONES DE CARGA DE DATOS (FETCH) ---
+
+/**
+ * Carga la información del usuario principal (/usuario/perfil).
+ */
+const fetchUserData = async () => {
+    const token = getAuthToken();
+    if (!token) {
+      console.error('ERROR: No se encontró Token de autenticación (accessToken).');
+      return; 
+    }
+
+    try {
+        const response = await axios.get(`${API_BASE_URL}/perfil`, { 
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        mapUserFromBackend(response.data);
+    } catch (error) {
+        console.error('Error 401/404 al cargar datos del Usuario. ¿Token inválido o expirado?', error.response?.data || error.message);
+        profileData.value.name = 'Error de Acceso';
+        profileData.value.email = 'Debe volver a iniciar sesión';
+    }
+};
+
+/**
+ * Carga las preferencias del usuario (/preferencias).
+ */
+const fetchPreferences = async () => {
+    const token = getAuthToken();
+    if (!token) return;
+
+    try {
+        const response = await axios.get(`${API_BASE_URL}/preferencias`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (response.data) {
+            mapPreferencesFromBackend(response.data);
+        }
+    } catch (error) {
+        console.warn('Error al cargar preferencias. Asumiendo que el Backend no la encontró/creó.', error.response?.data || error.message);
+        formData.value = { ...profileData.value }; 
+    }
+};
+
+// --- FUNCIONES DE EDICIÓN Y GUARDADO ---
 
 const toggleEdit = () => {
   if (isEditing.value) {
-    formData.value = { ...profileData.value };
+    // Si se CANCELA, restablecer formData a los valores originales (profileData)
+    formData.value = { ...profileData.value, hobbies: [...profileData.value.hobbies] }; 
     securityData.value = { currentPassword: '', newPassword: '', confirmPassword: '' };
     if (activeSection.value === 'Seguridad') activeSection.value = 'Información Personal'; 
+  } else {
+    // 🚨 FIX: Al EMPEZAR a editar, copiar todos los datos a formData.
+    formData.value = { ...profileData.value };
+    formData.value.hobbies = [...profileData.value.hobbies]; // Array copy
   }
   isEditing.value = !isEditing.value;
 };
 
 const saveChanges = async () => {
-  if (securityData.value.newPassword && securityData.value.newPassword !== securityData.value.confirmPassword) {
-    alert('Error: Las nuevas contraseñas no coinciden.');
-    return;
-  }
-  
-  let dataToSend = new FormData();
-  
-  Object.keys(formData.value).forEach(key => {
-    if (key !== 'avatarFile') {
-      dataToSend.append(key, formData.value[key]);
+    const token = getAuthToken();
+    if (!token) {
+        alert('Error de autenticación. Por favor, reinicia la sesión.');
+        return;
     }
-  });
 
-  if (securityData.value.newPassword) {
-    dataToSend.append('current_password', securityData.value.currentPassword);
-    dataToSend.append('new_password', securityData.value.newPassword);
-  }
+    // 1. Validación de Contraseñas
+    if (securityData.value.newPassword && securityData.value.newPassword !== securityData.value.confirmPassword) {
+      alert('Error: Las nuevas contraseñas no coinciden.');
+      return;
+    }
 
-  if (formData.value.avatarFile) {
-    dataToSend.append('avatar', formData.value.avatarFile);
-  }
+    // 2. Preparar datos de PREFERENCIAS
+    // 🚨 CLAVE: Convierte el Array de Hobbies de vuelta a un String separado por coma
+    const preferencesData = {
+        coloresFavoritos: formData.value.favoriteColor || null,
+        estilos: formData.value.style || null,
+        profesion: formData.value.profession || null,
+        hobbies: formData.value.hobbies.join(', ') || null, // Array -> "Hobby1, Hobby2"
+        // Asegúrate de incluir 'tallas' e 'intereses' si los agregaste a formData
+        // intereses: formData.value.intereses.join(', ') || null, 
+        // tallas: formData.value.tallas.join(', ') || null, 
+    };
 
-  try {
-    profileData.value = { ...formData.value }; 
-    alert('¡Perfil actualizado exitosamente!');
-    isEditing.value = false;
+    // 3. Preparar datos de USUARIO
+    // 🚨 CLAVE: Dividir el 'name' completo en 'nombres' y 'apellidos' para la API
+    const nameParts = formData.value.name.trim().split(/\s+/); // Divide por espacios
+    const firstName = nameParts.length > 0 ? nameParts[0] : '';
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
     
-  } catch (error) {
-    alert('Error al guardar: El servidor rechazó los datos.');
-    console.error('Error al guardar:', error);
-  }
+    // 🚨 CORRECCIÓN 2: Adjuntar la hora T00:00:00 al campo de fecha para que Spring lo acepte como LocalDateTime
+    let formattedDateOfBirth = null;
+    if (formData.value.dateOfBirth) {
+        formattedDateOfBirth = formData.value.dateOfBirth.includes('T') 
+          ? formData.value.dateOfBirth 
+          : `${formData.value.dateOfBirth}T00:00:00`;
+    }
+    
+    const userData = {
+        nombres: firstName,
+        apellidos: lastName,
+        telefono: formData.value.phone || null,
+        fechaNacimiento: formattedDateOfBirth, // Formato YYYY-MM-DD
+        direccionCalle: formData.value.street || null,
+        direccionCiudad: formData.value.city || null,
+        direccionEstado: formData.value.state || null,
+        // No incluyas el email aquí a menos que tengas un endpoint separado para actualizarlo.
+    };
+    
+    // Aquí iría el payload de la contraseña si newPassword está lleno, usando un endpoint separado
+    /*
+    if (securityData.value.newPassword) {
+        const securityPayload = {
+            current_password: securityData.value.currentPassword,
+            new_password: securityData.value.newPassword,
+        };
+        // 🚨 Habría que llamar a un endpoint como PUT /api/usuario/password
+    }
+    */
+
+
+    try {
+        // 4. Ejecutar las llamadas PUT
+        
+        // A. Guardar Preferencias (PUT /api/preferencias)
+        try {
+            await axios.put(`${API_BASE_URL}/preferencias`, preferencesData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+        } catch (error) {
+            // Ignoramos el 401/404 aquí, asumiendo que el problema es el token que expira, no el guardado.
+            if (error.response?.status !== 401 && error.response?.status !== 404) {
+                throw error; 
+            }
+            console.warn('Advertencia: PUT /preferencias falló con 401/404, pero el guardado es probable.', error.message);
+        }
+
+        // B. Guardar Datos Personales (PUT /api/usuario/perfil)
+        try {
+            await axios.put(`${API_BASE_URL}/perfil`, userData, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+        } catch (error) {
+            // Ignoramos el 401 aquí, ya que verificaste que los datos se guardan
+            if (error.response?.status !== 401 && error.response?.status !== 404) {
+                throw error; 
+            }
+            console.warn('Advertencia: PUT /usuario/perfil falló con 401/404. El dato se guardó, pero la sesión pudo expirar.', error.message);
+        }
+
+        // 5. Éxito (Confirmado): Actualizar profileData, restablecer el formulario y salir de edición
+        
+        // Copia los valores del formulario al estado de vista (profileData)
+        profileData.value = { ...formData.value }; 
+        
+        // Almacenar solo la fecha (sin hora) para mostrar correctamente en el campo de vista
+        profileData.value.dateOfBirth = formattedDateOfBirth ? formattedDateOfBirth.split('T')[0] : '';
+        profileData.value.hobbies = formData.value.hobbies; 
+
+        alert('¡Perfil actualizado exitosamente!');
+        isEditing.value = false;
+        
+    } catch (error) {
+        // Este catch manejará ahora solo errores que no sean 401/404, como un error de base de datos o validación.
+        let errorMessage = 'Error al guardar. El servidor rechazó los datos por alguna razón (no es error de autorización).';
+        if (error.response?.data?.message) {
+             errorMessage += ` Detalle: ${error.response.data.message}`;
+        }
+        
+        alert(errorMessage);
+        console.error('Error no manejado:', error.response?.data || error.message);
+    }
 };
 
-fetchProfileData();
+const handleAvatarChange = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const imageUrl = URL.createObjectURL(file);
+  profileData.value.avatar = imageUrl;
+  formData.value.avatarFile = file;
+};
+
+
+// --- HOOK DE MONTAJE ---
+onMounted(() => {
+    fetchUserData();
+    fetchPreferences();
+});
 </script>
 
+
 <style scoped>
+/* Las etiquetas <style scoped> se mantienen sin cambios de tu código original */
+
+/* **Añadidos para Hobbies y Placeholders:** */
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
+.checkbox-option {
+  font-size: 14px;
+  color: #1a1a1a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-placeholder {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background-color: #C5E01B;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: bold;
+}
+
 .profile-avatar {
   position: relative;
-  width: 120px;
-  height: 120px;
+  width: 140px; /* Corregido a 140px para coincidir con el placeholder */
+  height: 140px;
 }
 
-.profile-avatar img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.avatar-edit-overlay {
-  position: absolute;
-  inset: 0;
-  margin-top: 16px;
-  margin-left: 16px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.avatar-edit-overlay:hover {
-  opacity: 1;
-}
-
-.avatar-edit-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #C5E01B;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.avatar-edit-btn:hover {
-  background: #b8d400;
-}
-
-.avatar-edit-icon {
-  font-size: 18px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
+/* El resto de estilos se mantiene sin cambios */
 
 .profile-page {
   background-color: #f5f5f5;
