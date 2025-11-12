@@ -83,6 +83,7 @@ const routes = [
     path: '/reset-password',
     name: 'reset-password',
     component: ResetPasswordView,
+    meta: { hideNavbar: true }
   },
 
   {

@@ -430,7 +430,7 @@ const proceedToCheckout = () => {
 .checkout-btn {
   width: 100%;
   padding: 14px;
-  background-color: #007bff; /* Azul vibrante */
+  background-color: #b3d900; /* Azul vibrante */
   border: none;
   border-radius: 8px;
   font-size: 17px;
@@ -438,11 +438,11 @@ const proceedToCheckout = () => {
   color: white;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+  box-shadow: 0 2px 4px #b3d900;
 }
 
 .checkout-btn:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: #a5c80a;
   transform: translateY(-1px);
 }
 
