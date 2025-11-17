@@ -85,10 +85,12 @@
     <!-- Modal de Confirmación de Producto Añadido (Recomendado sobre alert()) -->
     <div v-if="showSuccessMessage" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
-            <svg class="w-12 h-12 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="48" height="48" viewBox="0 0 48 48">
+              <path fill="#4caf50" d="M44,24c0,11.045-8.955,20-20,20S4,35.045,4,24S12.955,4,24,4S44,12.955,44,24z"></path><path fill="#ccff90" d="M34.602,14.602L21,28.199l-5.602-5.598l-2.797,2.797L21,33.801l16.398-16.402L34.602,14.602z"></path>
+            </svg>
             <h3 class="text-lg font-bold mb-2 text-gray-800">¡Producto Añadido!</h3>
             <p class="text-sm text-gray-600">El artículo ha sido agregado a tu carrito.</p>
-            <button @click="showSuccessMessage = false" class="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition duration-150">
+            <button @click="showSuccessMessage = false" class="btn-cerrar">
                 Cerrar
             </button>
         </div>
@@ -100,8 +102,8 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'; 
-import apiClient from '@/services/api'; // Cliente para productos (requiere JWT)
-import axios from 'axios';             // Usaremos axios directamente para la categoría (ruta pública)
+import apiClient from '@/services/api'; // Cliente para productos 
+import axios from 'axios';             // Usaremos axios directamente para la categoría
 import { useRouter } from 'vue-router';
 import FloatingAssistantButton from '@/components/FloatingAssistantButton.vue';
 
@@ -610,5 +612,15 @@ const router = useRouter();
    .w-full { width: 100%; }
    .text-center { text-align: center; }
 
-
+.btn-cerrar {
+  width: 100%;
+  background-color: #22c55e;
+  color: white;
+  font-weight: 600;
+  padding: 10px 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
 </style>
