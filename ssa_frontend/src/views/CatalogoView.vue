@@ -102,8 +102,8 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'; 
-import apiClient from '@/services/api'; // Cliente para productos (requiere JWT)
-import axios from 'axios';             // Usaremos axios directamente para la categoría (ruta pública)
+import apiClient from '@/services/api'; // Cliente para productos 
+import axios from 'axios';             // Usaremos axios directamente para la categoría
 import { useRouter } from 'vue-router';
 import FloatingAssistantButton from '@/components/FloatingAssistantButton.vue';
 

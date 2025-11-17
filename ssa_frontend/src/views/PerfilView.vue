@@ -449,16 +449,20 @@ const toggleEdit = () => {
 
 const saveChanges = async () => {
     const token = getAuthToken();
-    if (!token) {
+    if (!token) { 
         alert('Error de autenticación. Por favor, reinicia la sesión.');
         return;
     }
+
+    //console.log("Token a enviar:", token.substring(0, 30) + "..."); // Imprime una porción del token
 
     // 1. Validación de Contraseñas
     if (securityData.value.newPassword && securityData.value.newPassword !== securityData.value.confirmPassword) {
       alert('Error: Las nuevas contraseñas no coinciden.');
       return;
     }
+
+    
 
     // 2. Preparar datos de PREFERENCIAS
     // 🚨 CLAVE: Convierte el Array de Hobbies de vuelta a un String separado por coma
@@ -536,7 +540,7 @@ const saveChanges = async () => {
             if (error.response?.status !== 401 && error.response?.status !== 404) {
                 throw error; 
             }
-            console.warn('Advertencia: PUT /usuario/perfil falló con 401/404. El dato se guardó, pero la sesión pudo expirar.', error.message);
+            console.warn('Advertencia: PUT /perfil falló con 401/404. El dato se guardó, pero la sesión pudo expirar.', error.message);
         }
 
         // 5. Éxito (Confirmado): Actualizar profileData, restablecer el formulario y salir de edición
@@ -561,6 +565,56 @@ const saveChanges = async () => {
         alert(errorMessage);
         console.error('Error no manejado:', error.response?.data || error.message);
     }
+
+    // 4. Ejecutar las llamadas PUT (Ahora con un único catch para fallos)
+    /*try {
+        const headers = { Authorization: `Bearer ${token}` };
+
+        // A. Guardar Preferencias (PUT /api/preferencias)
+        await axios.put(`${API_BASE_URL}/preferencias`, preferencesData, { headers });
+
+        // B. Guardar Datos Personales (PUT /api/perfil)
+        await axios.put(`${API_BASE_URL}/perfil`, userData, { headers });
+
+        // 5. Éxito: Actualizar profileData, restablecer el formulario y salir de edición
+        
+        // Copia los valores del formulario al estado de vista (profileData)
+        profileData.value = { ...formData.value }; 
+        
+        // Almacenar solo la fecha (sin hora) para mostrar correctamente en el campo de vista
+        profileData.value.dateOfBirth = formattedDateOfBirth ? formattedDateOfBirth.split('T')[0] : '';
+        profileData.value.hobbies = formData.value.hobbies; 
+
+        alert('¡Perfil actualizado exitosamente!');
+        isEditing.value = false;
+        
+    } catch (error) {
+        // Este catch manejará CUALQUIER error de CUALQUIERA de las dos llamadas PUT (incluyendo 401)
+        let errorMessage = 'Error al guardar el perfil. ';
+        
+        if (error.response) {
+             console.error('Detalle del error de la API:', error.response.data);
+             console.error('Código de estado:', error.response.status);
+
+            if (error.response.status === 401) {
+                errorMessage = 'Error 401: Sesión expirada o Token inválido. Por favor, vuelve a iniciar sesión.';
+            } else if (error.response.status === 404) {
+                 errorMessage = 'Error 404: La ruta de la API es incorrecta. Asegúrate de usar el puerto 8080 y la ruta /api/perfil.';
+            } else if (error.response.data?.message) {
+                 // Si el backend envía un mensaje de error (ej: campo requerido, validación)
+                 errorMessage += `Detalle: ${error.response.data.message}`;
+            } else {
+                 errorMessage += `Código: ${error.response.status}.`;
+            }
+        } else {
+            errorMessage += `No se pudo conectar al servidor: ${error.message}`;
+        }
+        
+        alert(errorMessage);
+        // Opcional: Recargar los datos originales si el guardado falló
+        fetchUserData();
+        fetchPreferences();
+    }*/
 };
 
 const handleAvatarChange = async (event) => {
