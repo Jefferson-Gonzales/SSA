@@ -1,5 +1,5 @@
 <template>
-  <button class="floating-assistant-btn" @click="$emit('open-chat')">
+  <button class="floating-assistant-btn" @click="$emit('toggle-chat')">
     <img class="icon-chat" src="../assets/ic_bot.png" alt="message-bot"/>
   </button>
 </template>

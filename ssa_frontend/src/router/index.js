@@ -11,6 +11,13 @@ import PersonalizacionView from '@/views/PersonalizacionView.vue'
 import PerfilView from '@/views/PerfilView.vue'
 import OfertasView from '@/views/OfertasView.vue'
 import CheckoutView from '@/views/CheckoutView.vue'
+import FavoritosView  from '@/views/FavoritosView.vue' 
+
+
+// 🎯 Nombre de la ruta principal para redirigir si ya está logueado
+const Homeroute = 'catalogo'; 
+// 🎯 Nombre de la ruta de autenticación
+const Loginroute = 'login';
 
 
 const routes = [
@@ -26,7 +33,7 @@ const routes = [
     },
   {
     path: '/login',
-    name: 'login',
+    name: Loginroute,
     component: LoginView,
     meta: { hideNavbar: true }
   },
@@ -50,7 +57,7 @@ const routes = [
   },
   {
     path: '/catalogo',
-    name: 'catalogo',
+    name: Homeroute,
     component: CatalogoView,
     meta: { requiresAuth: true } // <--- ¡Proteger Carrito!
   },
@@ -91,6 +98,12 @@ const routes = [
     name: 'CheckoutView',
     component: CheckoutView,
   },
+  {
+    path: '/Favoritos',
+    name: '/FavoritosView',
+    component: FavoritosView,
+    meta: { requiresAuth: true } // ¡Asegúrate de proteger esta ruta!
+  }
 ]
 
 
@@ -100,7 +113,7 @@ const router = createRouter({
     routes
 })
 
-// === GUARDIÁN DE NAVEGACIÓN GLOBAL ===
+/* === GUARDIÁN DE NAVEGACIÓN GLOBAL ===
 router.beforeEach((to, from, next) => {
     // 1. Verificar si la ruta requiere autenticación
     if (to.meta.requiresAuth) {
@@ -130,6 +143,32 @@ router.beforeEach((to, from, next) => {
         // La ruta no requiere autenticación: permite el acceso
         next();
     }
+});*/
+
+// === GUARDIÁN DE NAVEGACIÓN GLOBAL CORREGIDO ===
+router.beforeEach((to, from, next) => {
+    // Comprobar si existe un Token JWT
+    const isAuthenticated = localStorage.getItem('accessToken'); 
+    
+    // 1. Manejar si el usuario está logueado y va a rutas de autenticación
+    if (isAuthenticated && (to.name === Loginroute || to.name === 'registro')) {
+        console.log('Ya iniciaste sesión. Redirigiendo a Catalogo.');
+        // Redirige al Home/Catálogo para evitar que el usuario se quede en Login/Registro
+        return next({ name: Homeroute, replace: true });
+    }
+
+    // 2. Manejar si la ruta requiere autenticación y NO está logueado
+    const requiresAuth = to.meta.requiresAuth;
+
+    if (requiresAuth && !isAuthenticated) {
+        // Redirige a Login si la ruta está protegida y no hay token
+        console.log("Acceso denegado. Redirigiendo a Login.");
+        return next({ name: Loginroute});
+    }
+    
+    // 3. Permite la navegación en todos los demás casos
+    // (rutas públicas sin token, rutas protegidas con token)
+    next();
 });
 
 export default router;
