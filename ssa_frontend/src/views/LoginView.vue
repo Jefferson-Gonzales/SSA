@@ -4,7 +4,7 @@ cuando mis credenciales son correctas y deberia entrar con normalidad.
 <template>
   <div class="login-page">
     <div class="title">
-        <h1 class="">SAGASMART</h1>
+        <h1 class="">ShopAssist AI</h1>
         <p>Inicia sesión en tu cuenta</p>
     </div>
 
