@@ -1,8 +1,3 @@
-¡Mis más sinceras disculpas! Tienes razón, generé el código en la respuesta anterior pero no lo copié en el formato final, lo cual es frustrante.
-
-Aquí está, por tercera vez y corregido, el código completo de la vista src/views/CheckoutView.vue con la lógica de Culqi y la integración con tu servicio de Axios que usa JWT:
-
-Code snippet
 
 <template>
   <div class="bg-gray-50 min-h-screen">

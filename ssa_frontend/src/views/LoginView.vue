@@ -1,3 +1,6 @@
+Ahora tengo un problema, cuando quiero ingresar a una cuenta desde mi login me sale Estado del perfil después del login: false
+"Acceso denegado. Redirigiendo a Login." 
+cuando mis credenciales son correctas y deberia entrar con normalidad.
 <template>
   <div class="login-page">
     <div class="title">
@@ -44,6 +47,44 @@ const isLoading = ref(false);
 
 // URL del endpoint de autenticación (Asegúrate de que coincida con tu backend)
 const LOGIN_URL = 'http://localhost:8080/api/auth/login';
+const API_BASE_URL = 'http://localhost:8080/api';
+
+// 🔹 Nueva función: revisa preferencias y decide a dónde ir
+/*const redirectAfterLogin = async () => {
+  const token = localStorage.getItem('accessToken');
+  if (!token) {
+    router.push('/login');
+    return;
+  }
+
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/preferencias/mis-preferencias`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    // Si el backend devuelve un objeto con datos, asumimos que ya configuró preferencias
+    if (response.data && Object.keys(response.data).length > 0) {
+      // Ya tiene prefs → catálogo personalizado
+      router.push('/catalogo-personalizado');
+    } else {
+      // Objeto vacío → tratar como sin preferencias
+      router.push('/personalizacion');
+    }
+  } catch (error) {
+    console.log('Error consultando preferencias:', error?.response?.status);
+
+    // Si no existen preferencias (por ejemplo 404), lo enviamos a completar
+    if (error.response && error.response.status === 404) {
+      router.push('/personalizacion');
+    } else {
+      // Cualquier otro error → al catálogo normal
+      router.push('/catalogo');
+    }
+  }
+};*/
 
 /**
  * Maneja el envío del formulario de inicio de sesión.
@@ -66,14 +107,49 @@ const login = async () => {
     if (accessToken) {
       // Guardar el token en localStorage. 
       // El 'apiClient.js' lo leerá automáticamente para todas las peticiones protegidas.
-      localStorage.setItem('accessToken', accessToken); 
+      localStorage.setItem('accessToken', accessToken);
+      try {
+        // 🔹 2. Consultar estado del perfil con el token recién guardado
+        const estadoResp = await axios.get(
+          `${API_BASE_URL}/perfil/estado`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          }
+        );
+
+        const perfilCompleto = estadoResp.data.perfilCompleto;
+        //ELIMINAR ESTO LUEGO DE PRUEBAS
+        console.log('Estado del perfil después del login:', perfilCompleto);
+
+        if(!perfilCompleto){
+          router.push('/personalizacion');
+        } else{
+          router.push('/catalogo');
+        }
+
+        
+      
+      
+      } catch (e){
+        console.warn('No se pudo obtener /perfil/estado, redirigiendo a /catalogo por defecto.', e);
+        router.push('/catalogo');
+      }
+
+    }else {
+      errorMessage.value = 'Inicio de sesión exitoso, pero no se recibió el token de acceso.';
+    }
+
+    /*
+       
+
+      await redirectAfterLogin();
       
       // 3. Redirigir al catálogo de productos
-      router.push('/catalogo'); 
+      //router.push('/catalogo'); 
 
     } else {
       errorMessage.value = 'Inicio de sesión exitoso, pero no se recibió el token de acceso.';
-    }
+    }*/
 
   } catch (error) {
     console.error('Error durante el inicio de sesión:', error);

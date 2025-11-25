@@ -1,12 +1,12 @@
 <template>
   <div>
     <HeaderNav v-if="!$route.meta.hideNavbar" :cartItemsCount="cartItemCount" />
-    
+    <ProfilePrompt />
 
 
     <router-view/>
-    <FloatingAssistantButton v-if="!isChatOpen" @open-chat="isChatOpen = true"/>
-    <ChatBotView v-if="isChatOpen" @close-chat="isChatOpen = false"/>
+    <FloatingAssistantButton :is-open="isChatOpen" @toggle-chat="toggleChat"/>
+    <ChatBotView v-if="isChatOpen" @close-chat="closeChat"/>
   </div>
 </template>
 
@@ -14,20 +14,31 @@
 import HeaderNav from '@/components/HeaderNav.vue'
 import FloatingAssistantButton from './components/FloatingAssistantButton.vue';
 import ChatBotView from './views/ChatBotView.vue';
+import ProfilePrompt from '@/components/ProfilePrompt.vue';
 
 
 export default {
   components: {
     HeaderNav,
     FloatingAssistantButton,
-    ChatBotView
+    ChatBotView,
+    ProfilePrompt
   },
   data() {
     return {
       cartItemCount: 1,
       isChatOpen: false
     }
+  },
+  methods: {
+    toggleChat() {
+      this.isChatOpen = !this.isChatOpen;
+    },
+    closeChat() {
+      this.isChatOpen = false;
+    }
   }
+
 }
 </script>
 

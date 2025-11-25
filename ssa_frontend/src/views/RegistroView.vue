@@ -68,7 +68,7 @@
                 id="email"
                 v-model="form.email"
                 type="email"
-                placeholder="tu@email.com"
+                placeholder="tu@gmail.com"
                 class="form-input"
                 required
               />
@@ -149,6 +149,22 @@
         </div>
       </div>
     </div>
+    <!-- 🔹 Modal de éxito de registro -->
+<div v-if="showSuccessModal" class="modal-overlay">
+  <div class="modal-dialog">
+    <h3 class="modal-title">¡Cuenta creada con éxito! 🎉</h3>
+    <p class="modal-text">
+      Tu cuenta ha sido creada correctamente.  
+      Ahora puedes iniciar sesión para empezar a comprar.
+    </p>
+    <div class="modal-actions">
+      <button type="button" class="modal-btn" @click="goToLogin">
+        Ir a iniciar sesión
+      </button>
+    </div>
+  </div>
+</div>
+
   </div>
 </template>
 
@@ -161,6 +177,7 @@ import apiClient from '@/services/api'; // Asegúrate de que esta ruta sea corre
 const router = useRouter()
 const isLoading = ref(false) // Estado para manejar la carga
 const errorMsg = ref('') // Estado para mostrar errores del servidor
+const showSuccessModal = ref(false) // Estado para mostrar el modal de éxito
 
 const form = ref({
   firstName: '',
@@ -269,10 +286,9 @@ const handleSubmit = async () => {
 
     // 4. Manejo de éxito
     console.log('Registro exitoso:', response.data)
-    
-    // Redirigir al usuario a la página de login o a su perfil
-    alert('¡Registro exitoso! Por favor, inicia sesión.')
-    router.push('/login') 
+
+    showSuccessModal.value = true;
+
 
   } catch (error) {
     // 5. Manejo de errores
@@ -290,6 +306,14 @@ const handleSubmit = async () => {
     isLoading.value = false // Desactivar estado de carga
   }
 }
+
+// 🔹 NUEVO: función para cerrar modal e ir al login
+const goToLogin = () => {
+  showSuccessModal.value = false
+  router.push('/login')
+}
+
+
 </script>
 
 <!-- 
@@ -640,4 +664,61 @@ const handleSubmit = () => {
     transform: none;
     box-shadow: none;
 }
+
+/* 🔹 Modal de éxito de registro */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-dialog {
+  background: #ffffff;
+  max-width: 420px;
+  width: 90%;
+  border-radius: 12px;
+  padding: 24px 20px 20px;
+  box-shadow: 0 20px 30px rgba(15, 23, 42, 0.25);
+  text-align: center;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1f2933;
+}
+
+.modal-text {
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.modal-btn {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #c5e01b;
+  color: #1a1a1a;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.modal-btn:hover {
+  background-color: #a3b818;
+  transform: translateY(-1px);
+}
+
 </style>

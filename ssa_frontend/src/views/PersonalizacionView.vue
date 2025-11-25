@@ -113,23 +113,74 @@
           </button>
         </div>
       </form>
+
+      <!-- Modal de confirmación -->
+<div 
+  v-if="showConfirmModal" 
+  class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+    <h2 class="text-xl font-bold mb-4">Confirmar tus preferencias</h2>
+    <p class="mb-4 text-sm text-gray-700">
+      ¿Confirmas que deseas guardar estas preferencias para personalizar tu catálogo?
+    </p>
+
+    <ul class="text-sm mb-4 text-left">
+      <li><strong>Profesión:</strong> {{ formData.professions.join(', ') || 'No seleccionado' }}</li>
+      <li><strong>Hobbies:</strong> {{ formData.hobbies.join(', ') || 'No seleccionado' }}</li>
+      <li><strong>Color favorito:</strong> {{ formData.favoriteColor || 'No seleccionado' }}</li>
+      <li><strong>Estilos:</strong> {{ formData.styles.join(', ') || 'No seleccionado' }}</li>
+      <li><strong>Intereses:</strong> {{ formData.interests.join(', ') || 'No seleccionado' }}</li>
+    </ul>
+
+    <div class="flex justify-end gap-3">
+      <button 
+        class="btn btn-secondary"
+        type="button"
+        @click="showConfirmModal = false"
+        :disabled="isSaving"
+      >
+        Cancelar
+      </button>
+      <button 
+        class="btn btn-primary"
+        type="button"
+        @click="savePreferences"
+        :disabled="isSaving"
+      >
+        {{ isSaving ? 'Guardando...' : 'Confirmar y Guardar' }}
+      </button>
+    </div>
+  </div>
+</div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const API_BASE_URL = 'http://localhost:8080/api'
 
 const currentStep = ref(1)
 const totalSteps = 5
+const showConfirmModal = ref(false)    // 👈 Modal de confirmación
+const isSaving = ref(false)
 
 const professions = [
-  'Estudiante',
-  'Profesional de TI',
-  'Educador',
-  'Emprendedor',
-  'Empleado Corporativo',
-  'Otro'
+  'Estudiante', 
+  'Ingenierio',
+  'Diseñador', 
+  'Doctor', 
+  'Profesor', 
+  'Emprendedor', 
+  'Químico',
+  'Deportista',
+  'Abogado',
+  'Psicólogo'
 ]
 
 const hobbies = [
@@ -166,20 +217,25 @@ const styles = [
 
 const interests = [
   'Ropa',
-  'Zapatos',
+  'Calzado',
   'Accesorios',
   'Deportes',
   'Tecnología',
   'Hogar',
-  'Belleza'
+  'Belleza',
+  'Construcción',
+  'Electrodomésticos',
+  'Jardinería',
+  'Mueblería',
+  'Productos para Mascotas'
 ]
 
 const formData = ref({
-  professions: [],
-  hobbies: [],
-  favoriteColor: '',
-  styles: [],
-  interests: []
+  professions: [],     // array
+  hobbies: [],         // array
+  favoriteColor: '',   // string (HEX de colors.value)
+  styles: [],          // array
+  interests: []        // array
 })
 
 const nextStep = () => {
@@ -194,9 +250,53 @@ const previousStep = () => {
   }
 }
 
+// 🔹 En vez de guardar directo, abrimos modal de confirmación
 const handleSubmit = () => {
-  console.log('Personalization Data:', formData.value)
-  alert('¡Tus preferencias han sido guardadas!')
+  showConfirmModal.value = true
+}
+
+// 🔹 Aquí sí guardamos de verdad en el backend
+const savePreferences = async () => {
+  isSaving.value = true
+
+  try {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      alert('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.')
+      router.push('/login')
+      return
+    }
+
+    // 👇 Muy importante: este shape coincide con lo que ya usas en PerfilView
+    const payload = {
+      profesion: formData.value.professions.join(', ') || null,
+      hobbies: formData.value.hobbies.join(', ') || null,
+      coloresFavoritos: formData.value.favoriteColor || null,
+      estilos: formData.value.styles.join(', ') || null,
+      intereses: formData.value.interests.join(', ') || null,
+      tallas: null // por ahora vacío, lo llenas cuando tengas tallas en el front
+    }
+
+    await axios.put(`${API_BASE_URL}/preferencias`, payload, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+
+    // 🎯 Opcional (pero recomendado): marcar algo en localStorage
+    // para saber que ya completó la personalización si quieres evitar otra consulta
+    // localStorage.setItem('perfilCompleto', 'true')
+
+    // Cerrar modal
+    showConfirmModal.value = false
+
+    // Redirigir al catálogo personalizado
+    router.push('/catalogo-personalizado')
+
+  } catch (error) {
+    console.error('Error al guardar preferencias:', error.response?.data || error.message)
+    alert('No se pudieron guardar tus preferencias. Intenta de nuevo.')
+  } finally {
+    isSaving.value = false
+  }
 }
 </script>
 

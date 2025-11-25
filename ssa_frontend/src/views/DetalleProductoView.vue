@@ -12,7 +12,7 @@
               <div class="main-image">
                   <img :src="productData.urlImagen || '/placeholder-image.jpg'" :alt="productData.nombre" />
               </div>
-              </div>
+          </div>
 
           <div class="product-info">
               <h1>{{ productData.nombre }}</h1>
@@ -51,8 +51,12 @@
                   <button class="add-to-cart-btn" @click="addToCart">
                       Agregar al carrito
                   </button>
-                  <button class="wishlist-btn" @click="toggleWishlist">
-                      ♡
+
+                  <button 
+                   class="wishlist-btn favorite-toggle-btn" 
+                    :class="productData.isFavorite ? 'favorite-active' : 'favorite-inactive'"
+                    @click="toggleFavorite" :disabled="isLoading || isToggling">
+                      <i :class="productData.isFavorite ? 'fas' : 'far'" class="fa-heart" aria-hidden="true"></i>
                   </button>
               </div>
 
@@ -74,7 +78,7 @@
       <div class="reviews-section">
           <h2>Comentarios de Clientes ({{ productData.resenas.length }})</h2>
           
-                    <!-- FORMULARIO DE COMENTARIO -->
+          <!-- FORMULARIO DE COMENTARIO -->
           <div class="review-form-container">
               <h3>Escribe tu Comentario</h3>
               <form @submit.prevent="submitReview">
@@ -108,276 +112,408 @@
                   <p class="review-comment">{{ resena.comentario }}</p>
               </div>
           </div>
-          </div>
+      </div>
     </div>
-    <!-- Modal de Confirmación de Producto Añadido (Usando clases Tailwind) -->
+
+    <ToastMessage ref="favoriteToast" :message="toastMessage" :type="toastType" />
+
+    <!-- Modal de Confirmación de Producto Añadido -->
     <div v-if="showSuccessMessage" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
-            <svg class="w-12 h-12 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="48" height="48" viewBox="0 0 48 48">
+              <path fill="#4caf50" d="M44,24c0,11.045-8.955,20-20,20S4,35.045,4,24S12.955,4,24,4S44,12.955,44,24z"></path><path fill="#ccff90" d="M34.602,14.602L21,28.199l-5.602-5.598l-2.797,2.797L21,33.801l16.398-16.402L34.602,14.602z"></path>
+            </svg>
             <h3 class="text-lg font-bold mb-2 text-gray-800">¡Producto Añadido!</h3>
             <p class="text-sm text-gray-600">El artículo ha sido agregado a tu carrito.</p>
-            <button @click="showSuccessMessage = false" class="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition duration-150">
+            <button @click="showSuccessMessage = false" class="btn-cerrar">
                 Cerrar
             </button>
         </div>
     </div>
 
+
   </div>
 </template>
 
-<script>
-import axios from 'axios'; // Asegúrate de tener axios instalado: npm install axios
 
-// --- Constante de localStorage ---
+<script>
+import axios from 'axios';
+import ToastMessage from '@/components/ToastMessage.vue';
+
+// --- Constantes de localStorage ---
 const LOCAL_STORAGE_KEY = 'SAGA_SHOPPING_CART';
+const LOCAL_FAVORITES_KEY = 'SAGA_FAVORITES';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 export default {
-    name: 'DetalleProductoView',
-    data() {
-        return {
-            isLoading: true,
-            quantity: 1,
-            // 1. NUEVO ESTADO para el modal de éxito
-            showSuccessMessage: false, 
-            // Nuevo estado para el formulario
-            newReviewComment: '',
-            isSubmitting: false,
-            reviewError: null,
-            reviewSuccess: null,
-            // Inicializar con la estructura esperada del DTO
-            productData: {
-                idProducto: null,
-                sku: null,
-                nombre: '',
-                descripcionCompleta: '',
-                marca: '',
-                categoria: '',
-                precioBase: 0,
-                stockActual: 0,
-                urlImagen: null, // Campo que debe venir del backend
-                resenas: [], // Listo para recibir la lista de reseñas
-            },
-        };
-    },
-    computed: {
-        productId() {
-            // Obtenemos el ID del producto desde la ruta (ej: /productos/13)
-            return this.$route.params.id;
-        }
-    },
+  name: 'DetalleProductoView',
+  components: {
+    ToastMessage
+  },
+  data() {
+    return {
+      isLoading: true,
+      isToggling: false,
+      quantity: 1,
+      showSuccessMessage: false,
+      newReviewComment: '',
+      isSubmitting: false,
+      reviewError: null,
+      reviewSuccess: null,
+      productData: {
+        idProducto: null,
+        sku: null,
+        nombre: '',
+        descripcionCompleta: '',
+        marca: '',
+        categoria: '',
+        precioBase: 0,
+        stockActual: 0,
+        urlImagen: null,
+        resenas: [],
+        isFavorite: false
+      },
+      toastMessage: '',
+      toastType: 'success',
+    };
+  },
 
-
-    methods: {
-
-      // --- FUNCIONES DE CARRITO ---
-        loadCart() {
-            try {
-                const storedCart = localStorage.getItem(LOCAL_STORAGE_KEY);
-                return storedCart ? JSON.parse(storedCart) : [];
-            } catch (error) {
-                console.error("Error al cargar el carrito de localStorage:", error);
-                return [];
-            }
-        },
-
-        saveCart(cart) {
-            try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cart));
-            } catch (error) {
-                console.error("Error al guardar el carrito en localStorage:", error);
-            }
-        },
-        
-        // 2. LÓGICA DE AÑADIR AL CARRITO
-        addToCart() {
-            if (this.productData.stockActual < this.quantity) {
-                // Usamos un modal o mensaje de error en lugar de alert()
-                console.error("Error: La cantidad excede el stock disponible.");
-                // Aquí podrías implementar un mensaje de error en el template si lo necesitas.
-                return; 
-            }
-
-            if (this.productData.idProducto === null) {
-                console.error("Error: No se puede añadir el producto, el ID es nulo.");
-                return;
-            }
-
-            // 1. Cargar el carrito actual
-            const currentCart = this.loadCart();
-
-            // 2. Definir un ID único para el producto en el carrito
-            const uniqueId = this.productData.idProducto;
-            const quantityToAdd = this.quantity;
-            
-            // 3. Buscar si el producto ya existe en el carrito
-            const existingItemIndex = currentCart.findIndex(item => item.id === uniqueId);
-
-            if (existingItemIndex !== -1) {
-                // A. Si existe, incrementa la cantidad (sin exceder el stock)
-                const newQuantity = currentCart[existingItemIndex].quantity + quantityToAdd;
-                
-                // Opción: Evitar añadir si la nueva cantidad supera el stock
-                if (newQuantity <= this.productData.stockActual) {
-                    currentCart[existingItemIndex].quantity = newQuantity;
-                } else {
-                    currentCart[existingItemIndex].quantity = this.productData.stockActual;
-                }
-                
-                console.log(`Producto ${this.productData.nombre} encontrado. Cantidad incrementada a ${currentCart[existingItemIndex].quantity}.`);
-
-            } else {
-                // B. Si no existe, crea el nuevo objeto de item del carrito
-                const newItem = {
-                    id: uniqueId,                       // CLAVE CRUCIAL: 'id'
-                    name: this.productData.nombre,      // CLAVE CRUCIAL: 'name'
-                    price: parseFloat(this.productData.precioBase), // CLAVE CRUCIAL: 'price'
-                    quantity: quantityToAdd,           // CLAVE CRUCIAL: 'quantity'
-                    image: this.productData.urlImagen,  // CLAVE CRUCIAL: 'image'
-                    size: 'N/A',                       // CLAVE CRUCIAL: 'size' (o usa un valor real si aplica)
-                };
-                currentCart.push(newItem);
-                console.log(`Producto ${this.productData.nombre} añadido por primera vez con cantidad ${quantityToAdd}.`);
-            }
-
-            // 4. Guardar el carrito actualizado
-            this.saveCart(currentCart);
-            
-            // 5. Mostrar el modal de éxito
-            this.showSuccessMessage = true;
-            setTimeout(() => {
-                this.showSuccessMessage = false;
-            }, 2500); // Ocultar el mensaje después de 2.5 segundos
-
-         // alert(`Añadido al carrito: ${this.quantity} x ${this.productData.nombre}`); // Eliminado
-        },
-
-        async fetchProductDetails() {
-            this.isLoading = true;
-            try {
-                // Endpoint real: http://localhost:8080/api/productos/13
-                const response = await axios.get(`http://localhost:8080/api/productos/${this.productId}`);
-                
-                // Mapear la respuesta al objeto productData
-                this.productData = response.data;
-                
-                // Inicializar la cantidad al máximo permitido o 1
-                this.quantity = Math.min(1, this.productData.stockActual); 
-                
-            } catch (error) {
-                console.error('Error al obtener los detalles del producto:', error);
-                const errorMessage = error.response 
-                    ? error.response.data 
-                    : error.message;
-                alert(`No se pudo cargar el producto. Error: ${errorMessage}`);
-            } finally {
-                this.isLoading = false;
-            }
-        },
-        async submitReview() {
-          
-            if (!this.newReviewComment.trim()) return; // Prevenir envío de comentarios vacíos
-
-            // 1. **OBTENER Y VALIDAR EL ID DEL PRODUCTO**
-            const productoId = this.productId; // Viene como string de la ruta
-
-            if (!productoId || isNaN(parseInt(productoId, 10))) {
-                this.reviewError = 'Error interno: ID de producto inválido en la URL.';
-                return;
-            }
-            
-            this.isSubmitting = true;
-            this.reviewError = null;
-            this.reviewSuccess = null;
-            
-
-            // 1. Crear el objeto DTO (solo necesitamos el 'comentario')
-            const reviewPayload = {
-                comentario: this.newReviewComment.trim()
-            };
-
-            try { 
-                // 2. Enviar la solicitud POST
-                // Endpoint: POST /api/productos/{idProducto}/resena
-                //var productoId = parseInt(String, this.productId)
-                const response = await axios.post(
-                    `http://localhost:8080/api/productos/${productoId}/resena`,
-                    reviewPayload,
-                    {
-                        // 3. ⚠️ IMPORTANT: Se necesita un token de autenticación (JWT) para tu backend de Spring Security.
-                        // Asumiendo que usas Spring Security y que el token está guardado en localStorage o en Vuex.
-                        // Ejemplo:
-                         headers: {
-                             'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                         },
-/*
-                         body :{
-                          'comentario': 'asd'
-                         }*/
-                        // Si estás en desarrollo y has deshabilitado temporalmente la seguridad para el POST: 
-                        // Ignora el header por ahora, pero actívalo en producción.
-                    }
-                );
-
-                // 4. Procesar la respuesta
-                if (response.status === 201) {
-                    this.reviewSuccess = 'Comentario publicado con éxito.';
-                    this.newReviewComment = ''; // Limpiar el textarea
-                    
-                    // 5. Refrescar la lista de reseñas para ver el nuevo comentario
-                    // Nota: Llamar a fetchProductDetails recarga TODO el producto. 
-                    // Si solo quieres añadir la reseña recién creada (response.data), puedes hacerlo directamente:
-                    const newReview = response.data;
-                    this.productData.resenas.push(newReview);
-                    
-                    // Opcional: Recargar todo (más seguro, pero más lento)
-                    // await this.fetchProductDetails(); 
-                }
-
-            } catch (error) {
-                console.error('Error al enviar la reseña:', error.response || error);
-                if (error.response && error.response.status === 401) {
-                    this.reviewError = 'Debes iniciar sesión para publicar un comentario.';
-                } else if (error.response && error.response.data) {
-                    // Mostrar el mensaje de error que devuelve Spring
-                    this.reviewError = error.response.data; 
-                } else {
-                    this.reviewError = 'Error de conexión o servidor. Intenta de nuevo.';
-                }
-            } finally {
-                this.isSubmitting = false;
-                // Limpiar el mensaje de éxito/error después de unos segundos
-                setTimeout(() => {
-                    this.reviewSuccess = null;
-                    this.reviewError = null;
-                }, 5000);
-            }
-        },
-        formatDate(isoDate) {
-            if (!isoDate) return 'Fecha desconocida';
-            // Formato más legible (puedes usar librerías como 'moment' o 'date-fns' para algo más avanzado)
-            const date = new Date(isoDate);
-            return date.toLocaleDateString('es-ES', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
-        },
-        /*addToCart() {
-            alert(`Añadido al carrito: ${this.quantity} x ${this.productData.nombre}`);
-        },*/
-        toggleWishlist() {
-            alert('Añadido a lista de deseos!');
-        },
-    },
-    created() {
-        // Llamar a la función de carga cuando el componente se crea
-        this.fetchProductDetails();
+  computed: {
+    productId() {
+      return this.$route.params.id;
     }
+  },
+
+  methods: {
+    // =========================
+    // TOAST
+    // =========================
+    showToast(message, type) {
+      this.toastMessage = message;
+      this.toastType = type;
+      this.$nextTick(() => {
+        this.$refs.favoriteToast.show();
+      });
+    },
+
+    // =========================
+    // CARRITO
+    // =========================
+    loadCart() {
+      try {
+        const storedCart = localStorage.getItem(LOCAL_STORAGE_KEY);
+        return storedCart ? JSON.parse(storedCart) : [];
+      } catch (error) {
+        console.error("Error al cargar el carrito de localStorage:", error);
+        return [];
+      }
+    },
+
+    saveCart(cart) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cart));
+      } catch (error) {
+        console.error("Error al guardar el carrito en localStorage:", error);
+      }
+    },
+
+    addToCart() {
+      if (this.productData.stockActual < this.quantity) {
+        console.error("Error: La cantidad excede el stock disponible.");
+        return; 
+      }
+
+      if (this.productData.idProducto === null) {
+        console.error("Error: No se puede añadir el producto, el ID es nulo.");
+        return;
+      }
+
+      const currentCart = this.loadCart();
+      const uniqueId = this.productData.idProducto;
+      const quantityToAdd = this.quantity;
+      
+      const existingItemIndex = currentCart.findIndex(item => item.id === uniqueId);
+
+      if (existingItemIndex !== -1) {
+        const newQuantity = currentCart[existingItemIndex].quantity + quantityToAdd;
+        if (newQuantity <= this.productData.stockActual) {
+          currentCart[existingItemIndex].quantity = newQuantity;
+        } else {
+          currentCart[existingItemIndex].quantity = this.productData.stockActual;
+        }
+      } else {
+        const newItem = {
+          id: uniqueId,
+          name: this.productData.nombre,
+          price: parseFloat(this.productData.precioBase),
+          quantity: quantityToAdd,
+          image: this.productData.urlImagen,
+          size: 'N/A',
+        };
+        currentCart.push(newItem);
+      }
+
+      this.saveCart(currentCart);
+
+      // 🔔 Avisar al Header que el carrito cambió
+      window.dispatchEvent(new CustomEvent('saga:cart-updated'));
+      
+      this.showSuccessMessage = true;
+      setTimeout(() => {
+        this.showSuccessMessage = false;
+      }, 2500);
+    },
+
+    // =========================
+    // FAVORITOS – helpers localStorage
+    // =========================
+    loadFavoritesFromStorage() {
+      try {
+        const raw = localStorage.getItem(LOCAL_FAVORITES_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .map(id => parseInt(id, 10))
+          .filter(id => !Number.isNaN(id));
+      } catch (e) {
+        console.error('Error leyendo favoritos de localStorage:', e);
+        return [];
+      }
+    },
+
+    saveFavoritesToStorage(ids) {
+      try {
+        const clean = Array.from(new Set(
+          ids
+            .map(id => parseInt(id, 10))
+            .filter(id => !Number.isNaN(id))
+        ));
+        localStorage.setItem(LOCAL_FAVORITES_KEY, JSON.stringify(clean));
+      } catch (e) {
+        console.error('Error guardando favoritos en localStorage:', e);
+      }
+    },
+
+    // =========================
+    // FAVORITOS – estado inicial
+    // =========================
+    async checkFavoriteStatus() {
+      const pid = parseInt(this.productId, 10);
+      if (!pid) return;
+
+      // 1️⃣ Baseline: localStorage
+      const storedIds = this.loadFavoritesFromStorage();
+      this.productData.isFavorite = storedIds.includes(pid);
+
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+
+      try {
+        const response = await axios.get(`${API_BASE_URL}/favoritos`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const raw = response.data;
+        if (!Array.isArray(raw)) {
+          console.warn('Respuesta de /favoritos no es un array:', raw);
+          return;
+        }
+
+        const favoriteIds = raw
+          .map(item => {
+            if (typeof item === 'number') return item;
+            if (typeof item === 'string') return parseInt(item, 10);
+            if (item && typeof item === 'object') {
+              return (
+                item.idProducto ??
+                item.idproducto ??
+                item.productId ??
+                item.id
+              );
+            }
+            return null;
+          })
+          .filter(id => id !== null && !Number.isNaN(id))
+          .map(id => parseInt(id, 10));
+
+        this.productData.isFavorite = favoriteIds.includes(pid);
+        this.saveFavoritesToStorage(favoriteIds);
+
+      } catch (error) {
+        console.warn(
+          "No se pudo obtener el estado de favoritos.",
+          error?.response?.status
+        );
+      }
+    },
+
+    // =========================
+    // FAVORITOS – toggle
+    // =========================
+    async toggleFavorite() {
+      const pid = parseInt(this.productId, 10);
+      if (this.isToggling || !pid) return;
+
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        this.showToast('Debes iniciar sesión para marcar productos como favoritos.', 'error');
+        this.$router.push('/login');
+        return;
+      }
+      
+      const previousStatus = this.productData.isFavorite;
+      const nextStatus = !previousStatus;
+
+      // Optimistic UI
+      this.productData.isFavorite = nextStatus;
+      this.isToggling = true;
+
+      try {
+        const headers = { Authorization: `Bearer ${token}` };
+        
+        await axios.post(
+          `${API_BASE_URL}/favoritos`, 
+          { idProducto: pid }, 
+          { headers }
+        );
+
+        // Actualizar localStorage en función del estado final
+        const stored = this.loadFavoritesFromStorage();
+        let updatedIds;
+        if (nextStatus) {
+          updatedIds = [...stored, pid];
+        } else {
+          updatedIds = stored.filter(id => id !== pid);
+        }
+        this.saveFavoritesToStorage(updatedIds);
+
+        // 🔔 Avisar al Header que cambió la cantidad de favoritos
+        window.dispatchEvent(new CustomEvent('saga:favorites-updated'));
+
+        if (nextStatus) {
+          this.showToast("El producto ha sido añadido con éxito a tu lista de deseos.", 'success');
+        } else {
+          this.showToast("El producto ha sido removido con éxito de tu lista de deseos.", 'remove');
+        }
+
+        // También para vistas que miran favoritesChanged
+        localStorage.setItem('favoritesChanged', Date.now().toString());
+
+      } catch (error) {
+        console.error("Error al gestionar favorito:", error);
+        this.productData.isFavorite = previousStatus; // revertir
+        this.showToast('Hubo un error al actualizar tus favoritos.', 'error');
+      } finally {
+        this.isToggling = false;
+      }
+    },
+
+    // =========================
+    // DETALLE DE PRODUCTO
+    // =========================
+    async fetchProductDetails() {
+      this.isLoading = true;
+      try {
+        const response = await axios.get(`${API_BASE_URL}/productos/${this.productId}`);
+        this.productData = response.data;
+
+        this.quantity = Math.min(1, this.productData.stockActual);
+
+        const pid = parseInt(this.productId, 10);
+        const storedFavs = this.loadFavoritesFromStorage();
+        this.productData.isFavorite = storedFavs.includes(pid);
+
+      } catch (error) {
+        console.error('Error al obtener los detalles del producto:', error);
+        const errorMessage = error.response 
+          ? error.response.data 
+          : error.message;
+        alert(`No se pudo cargar el producto. Error: ${errorMessage}`);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    // =========================
+    // RESEÑAS
+    // =========================
+    async submitReview() {
+      if (!this.newReviewComment.trim()) return;
+
+      const productoId = this.productId;
+      if (!productoId || isNaN(parseInt(productoId, 10))) {
+        this.reviewError = 'Error interno: ID de producto inválido en la URL.';
+        return;
+      }
+      
+      this.isSubmitting = true;
+      this.reviewError = null;
+      this.reviewSuccess = null;
+
+      const reviewPayload = {
+        comentario: this.newReviewComment.trim()
+      };
+
+      try { 
+        const response = await axios.post(
+          `${API_BASE_URL}/productos/${productoId}/resena`,
+          reviewPayload,
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+          }
+        );
+
+        if (response.status === 201) {
+          this.reviewSuccess = 'Comentario publicado con éxito.';
+          this.newReviewComment = '';
+          
+          const newReview = response.data;
+          this.productData.resenas.push(newReview);
+        }
+
+      } catch (error) {
+        console.error('Error al enviar la reseña:', error.response || error);
+        if (error.response && error.response.status === 401) {
+          this.reviewError = 'Debes iniciar sesión para publicar un comentario.';
+        } else if (error.response && error.response.data) {
+          this.reviewError = error.response.data; 
+        } else {
+          this.reviewError = 'Error de conexión o servidor. Intenta de nuevo.';
+        }
+      } finally {
+        this.isSubmitting = false;
+        setTimeout(() => {
+          this.reviewSuccess = null;
+          this.reviewError = null;
+        }, 5000);
+      }
+    },
+
+    formatDate(isoDate) {
+      if (!isoDate) return 'Fecha desconocida';
+      const date = new Date(isoDate);
+      return date.toLocaleDateString('es-ES', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    },
+  },
+
+  created() {
+    (async () => {
+      await this.fetchProductDetails();
+      await this.checkFavoriteStatus();
+    })();
+  }
 };
 </script>
 
 <style scoped>
-/* A partir de aquí sigue la totalidad de tu CSS */
+/* Tu CSS tal cual lo tenías */
 * {
   margin: 0;
   padding: 0;
@@ -391,7 +527,7 @@ export default {
 
 .product-details-container {
   display: flex;
-  flex-direction: column; /* Lo mantenemos para apilar main-content y reviews */
+  flex-direction: column;
   gap: 40px;
   padding: 40px;
   background-color: #f9f9f9;
@@ -412,7 +548,7 @@ export default {
 
 .main-image {
   width: 100%;
-  height: 400px; /* Ajuste para que se vea mejor */
+  height: 400px;
   background-color: white;
   border-radius: 12px;
   overflow: hidden;
@@ -551,11 +687,11 @@ export default {
   background-color: #b3d00f;
 }
 
+/* Wishlist */
 .wishlist-btn {
   width: 50px;
   height: 50px;
-  border: 2px solid #ddd;
-  background: white;
+  border: 2px solid transparent;
   border-radius: 6px;
   font-size: 24px;
   cursor: pointer;
@@ -563,8 +699,23 @@ export default {
 }
 
 .wishlist-btn:hover {
-  border-color: #C5E01B;
-  color: #C5E01B;
+  opacity: 0.85; 
+}
+
+.favorite-active {
+  background-color: rgb(161, 120, 120);
+  border-color: rgb(161, 120, 120);
+}
+
+.favorite-inactive {
+  background-color: #d0d0d0;
+  border-color: #d0d0d0; 
+}
+
+.favorite-toggle-btn .fa-heart {
+  font-size: 20px; 
+  color: white;
+  transition: color 0.2s, transform 0.2s;
 }
 
 /* Details Section */
@@ -618,7 +769,7 @@ export default {
   font-size: 20px;
 }
 
-/* Sección de Comentarios/Reseñas */
+/* Sección de Comentarios */
 .separator {
   border: none;
   border-top: 1px solid #ddd;
@@ -637,84 +788,81 @@ export default {
   font-weight: 600;
 }
 
-/* --- Nuevos estilos para el Formulario de Comentario --- */
 .review-form-container {
-    margin-bottom: 25px;
+  margin-bottom: 25px;
 }
 
 .review-form-container h3 {
-    font-size: 18px;
-    margin-bottom: 15px;
-    color: #1a1a1a;
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #1a1a1a;
 }
 
 .review-form-container form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .review-form-container textarea {
-    /* ESTILO CLAVE: Haz que ocupe todo el ancho */
-    width: 100%; 
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    resize: vertical;
-    font-size: 15px;
-    font-family: inherit;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: border-color 0.2s;
+  width: 100%; 
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+  font-size: 15px;
+  font-family: inherit;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s;
 }
 
 .review-form-container textarea:focus {
-    outline: none;
-    border-color: #C5E01B; /* Resalta el borde al hacer foco */
+  outline: none;
+  border-color: #C5E01B;
 }
 
 .submit-review-btn {
-    padding: 12px 20px;
-    background-color: #C5E01B;
-    color: #1a1a1a;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-    align-self: flex-start; /* Hace que el botón solo sea tan ancho como el texto */
+  padding: 12px 20px;
+  background-color: #C5E01B;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  align-self: flex-start;
 }
 
 .submit-review-btn:hover {
-    background-color: #b3d00f;
+  background-color: #b3d00f;
 }
 
-/* Estilos para mensajes de error y éxito */
 .review-error, .review-success {
-    padding: 10px 15px;
-    border-radius: 6px;
-    font-size: 14px;
-    margin-top: 10px;
-    font-weight: 500;
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-top: 10px;
+  font-weight: 500;
 }
 
 .review-error {
-    color: #b91c1c;
-    background-color: #fee2e2;
-    border: 1px solid #f87171;
+  color: #b91c1c;
+  background-color: #fee2e2;
+  border: 1px solid #f87171;
 }
 
 .review-success {
-    color: #047857;
-    background-color: #d1fae5;
-    border: 1px solid #34d399;
+  color: #047857;
+  background-color: #d1fae5;
+  border: 1px solid #34d399;
 }
 
 .separator-reviews {
-    border: none;
-    border-top: 1px solid #ddd;
-    margin: 25px 0;
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 25px 0;
 }
-/* --- Fin de nuevos estilos para el Formulario de Comentario --- */
+
 .no-reviews {
   padding: 20px;
   border: 1px dashed #ddd;
@@ -757,31 +905,38 @@ export default {
   line-height: 1.5;
 }
 
-/* Nota sobre el modal:
-   Las clases del modal (fixed inset-0 bg-gray-600...) asumen que estás usando Tailwind CSS.
-   Si no usas Tailwind, estas clases no funcionarán y tendrás que definir un CSS similar:*/
-   
-   .fixed { position: fixed; }
-   .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-   .bg-gray-600 { background-color: #4b5563; }
-   .bg-opacity-50 { background-color: rgba(75, 85, 99, 0.5); }
-   .flex, .items-center, .justify-center { display: flex; align-items: center; justify-content: center; }
-   .z-50 { z-index: 50; }
-   
-   /*Y para el contenido del modal:*/
-   .bg-white { background-color: white; }
-   .p-6 { padding: 1.5rem; }
-   .rounded-lg { border-radius: 0.5rem; }
-   .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-   .max-w-sm { max-width: 24rem; }
-   .w-full { width: 100%; }
-   .text-center { text-align: center; }
+/* Modal helpers (sin Tailwind real) */
+.fixed { position: fixed; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.bg-gray-600 { background-color: #4b5563; }
+.bg-opacity-50 { background-color: rgba(75, 85, 99, 0.5); }
+.flex, .items-center, .justify-center { display: flex; align-items: center; justify-content: center; }
+.z-50 { z-index: 50; }
 
+.bg-white { background-color: white; }
+.p-6 { padding: 1.5rem; }
+.rounded-lg { border-radius: 0.5rem; }
+.shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+.max-w-sm { max-width: 24rem; }
+.w-full { width: 100%; }
+.text-center { text-align: center; }
 
-/* Responsive Design */
+.btn-cerrar {
+  width: 100%;
+  background-color: #22c55e;
+  color: white;
+  font-weight: 600;
+  padding: 10px 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+/* Responsive */
 @media (max-width: 900px) {
-    .product-main-content {
-        flex-direction: column;
-    }
+  .product-main-content {
+    flex-direction: column;
+  }
 }
 </style>

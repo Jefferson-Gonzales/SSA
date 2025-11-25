@@ -1,399 +1,159 @@
 <template>
-    <div class="offers-page">
-    <section class="hero-banner">
-      <div class="hero-content">
-        <h2 class="hero-title">Ofertas Exclusivas</h2>
-        <p class="hero-description">Descubre nuestras últimas promociones y ahorra en tus artículos favoritos. ¡Tiempo limitado!</p>
-        <button class="btn-primary">Comprar Ahora</button>
-      </div>
-      <div class="hero-carousel-dots">
-        <span class="dot active"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-      </div>
-    </section>
+  <div class="ofertas-page">
+    <h2>Ofertas y promociones</h2>
 
-    <section class="section">
-      <h3 class="section-title">Promociones Actuales</h3>
-      <div class="promotions-grid-3">
-        <div class="promotion-card" v-for="promo in currentPromos" :key="promo.id">
-          <img :src="promo.image" :alt="promo.title" class="promo-image">
-          <div class="promo-content">
-            <h4 class="promo-title">{{ promo.title }}</h4>
-            <p class="promo-description">{{ promo.description }}</p>
-            <p class="promo-validity">Válido hasta: {{ promo.validity }}</p>
-            <button :class="['promo-btn', promo.buttonType]">{{ promo.buttonText }}</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <h3 class="section-title">Todas las Promociones</h3>
-      <div class="promotions-grid-4">
-        <div class="promotion-card" v-for="promo in allPromos" :key="promo.id">
-          <img :src="promo.image" :alt="promo.title" class="promo-image">
-          <div class="promo-content">
-            <h4 class="promo-title">{{ promo.title }}</h4>
-            <p class="promo-description">{{ promo.description }}</p>
-            <p class="promo-validity">Válido hasta: {{ promo.validity }}</p>
-            <button class="promo-btn details">{{ promo.buttonText }}</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
+    <div v-if="loading" class="loading">
+      Cargando ofertas...
     </div>
+
+    <div v-else-if="productos.length === 0" class="empty">
+      No hay ofertas disponibles en este momento.
+    </div>
+
+    <div v-else class="grid">
+      <div
+        v-for="producto in productos"
+        :key="producto.idproducto"
+        class="card"
+        @click="openProduct(producto)"
+      >
+        <div class="badge">OFERTA</div>
+        <h3>{{ producto.nombre }}</h3>
+        <p class="categoria">{{ producto.categoriaNombre }}</p>
+
+        <div class="precios">
+          <span class="precio-oferta">S/ {{ producto.precioOferta ?? producto.precioBase }}</span>
+          <span v-if="producto.enOferta && producto.precioOferta" class="precio-base">
+            S/ {{ producto.precioBase }}
+          </span>
+        </div>
+        <!-- 🔹 Aquí conectamos el botón al método verDetalle 
+        <button
+          class="btn-comprar"
+          @click="verDetalle(producto)">
+          Ver detalle
+        </button>-->
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
-import { ref } from 'vue'
+import axios from 'axios';
+
+
 
 export default {
-  name: 'OfertasPage',
-  setup() {
-    const currentPromos = ref([
-  {
-    id: 1,
-    title: 'Venta Flash de Moda',
-    description: 'Hasta 50% de descuento en ropa seleccionada.',
-    validity: '31/12/2024',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTvr-vStQj_P8bcZ4P6lNVz2jJ48Z8LzO7pT7qjBE-uR8cUYWg5gVAH4IluW8TT4jVQEXo&usqp=CAU',
-    buttonText: 'Aplicar Promoción',
-    buttonType: 'primary'
+  name: 'OfertasView',
+  data() {
+    return {
+      productos: [],
+      loading: false
+    };
   },
-  {
-    id: 2,
-    title: 'Ofertas de Tecnología',
-    description: 'Ahorra a lo grande en los últimos gadgets.',
-    validity: '25/12/2024',
-    image: 'https://marketplace.canva.com/EAGwofD9cNk/1/0/1131w/canva-flyer-volante-oferta-de-inform%C3%A1tica-publicitario-moderno-azul-y-naranja-E93hsZUwQS8.jpg',
-    buttonText: 'Ver Detalles',
-    buttonType: 'secondary'
+  async mounted() {
+    this.loading = true;
+    try {
+      const { data } = await axios.get('http://localhost:8080/api/productos/ofertas');
+      console.log("OFERTAS =>", data); // para verificar idProducto
+      this.productos = data;
+    } catch (e) {
+      console.error('Error cargando ofertas:', e);
+    } finally {
+      this.loading = false;
+    }
   },
-  {
-    id: 3,
-    title: 'Esenciales del Hogar',
-    description: 'Renueva tu hogar con nuestras ofertas especiales.',
-    validity: '30/11/2024',
-    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgb2fpxWTBbvDYZoX3vHLTYy_7j9-UngYzgA&s',
-    buttonText: 'Aplicar Promoción',
-    buttonType: 'primary'
-  }
-  ])
+  methods: {
+    openProduct(product) {
+      // 1. Intentar ambos posibles nombres de campo (idproducto / idProducto)
+      const productId = product?.idproducto || product?.idProducto;
 
-  const allPromos = ref([
-  {
-    id: 4,
-    title: 'Oferta de Estilo Veraniego',
-    description: 'Prepárate para el verano con nuestra colección con estilo.',
-    validity: '31/08/2024',
-    image: 'https://i.pinimg.com/736x/62/19/22/62192265b447adbf212231fd65abac65.jpg',
-    buttonText: 'Ver Detalles'
-  },
-  {
-    id: 5,
-    title: 'Evento de Actualización Tecnológica',
-    description: 'Actualiza tu tecnología con los últimos dispositivos.',
-    validity: '15/09/2024',
-    image: 'https://mbe.pe/wp-content/uploads/2023/11/MBE_P_0001_Electronicos.jpg',
-    buttonText: 'Ver Detalles'
-  },
-  {
-    id: 6,
-    title: 'Ofertas de Renovación del Hogar',
-    description: 'Transforma tu hogar con nuestra selección curada.',
-    validity: '30/09/2024',
-    image: 'https://theressa.net/images/articles/5bec1c7c77690house.jpg',
-    buttonText: 'Ver Detalles'
-  },
-  {
-    id: 7,
-    title: 'Equipo de Aventura al Aire Libre',
-    description: 'Equipo de alta calidad para tu próxima aventura.',
-    validity: '10/10/2024',
-    image: 'https://media.istockphoto.com/id/935244934/es/foto/equipo-de-viajero-en-la-aventura-de-la-vida-al-aire-libre-y-camping-concepto-de-viaje.jpg?s=612x612&w=0&k=20&c=kuY1RT_OpMmQcb9x2FY08I7i3RzfmIw9q85vdu2XK1Q=',
-    buttonText: 'Ver Detalles'
-  }
-    ])
+      // 2. VERIFICAR que el ID existe antes de navegar.
+      if (productId) {
+        // Usar this.$router dentro de componentes Vue para navegar.
+        this.$router.push({
+          name: 'detalle',
+          params: { id: productId }
+        });
+      } else {
 
-    return { currentPromos, allPromos }
+        alert('No se pudo cargar la información del producto. Inténtalo de nuevo.');
+      }
+    }
   }
-}
+};
+
 </script>
 
 <style scoped>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.ofertas-page {
+  padding: 24px 32px;
 }
 
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
 
-/* Hero Banner */
-.hero-banner {
-  background: linear-gradient(135deg, #4a6b5f 0%, #3d5a4f 100%);
-  color: white;
-  padding: 60px 40px;
-  margin: 30px;
-  border-radius: 20px;
+.card {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+
+.card {
   position: relative;
-  overflow: hidden;
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  border: 1px solid #eee;
 }
 
-.hero-banner::before {
-  content: '';
+.badge {
   position: absolute;
-  right: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background: url('https://cdn.shopify.com/s/files/1/0533/4361/7210/files/Las_flores_nunca_fallan_incluso_para_decorar_una_pared_de_tu_salon..jpg?v=1643876379') center/cover;
-  opacity: 0.3;
+  top: 12px;
+  right: 12px;
+  background: #ff5252;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 10px;
 }
 
-.hero-content {
-  position: relative;
-  z-index: 1;
-  max-width: 50%;
+.precios {
+  margin: 8px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
-.hero-title {
-  font-size: 48px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  text-align: left;
+.precio-oferta {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e53935;
 }
 
-.hero-description {
-  font-size: 16px;
-  line-height: 1.6;
-  margin-bottom: 30px;
-  opacity: 0.95;
-  text-align: left;
-}
-
-.btn-primary {
-  background-color: #b3d900;
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  border-radius: 25px;
+.precio-base {
   font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  width: fit-content;
-}
-
-.btn-primary:hover {
-  background-color: #9ab800;
-}
-
-.hero-carousel-dots {
-  position: absolute;
-  bottom: 20px;
-  right: 40px;
-  display: flex;
-  gap: 10px;
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.dot.active {
-  background-color: white;
-}
-
-/* Sections */
-.section {
-  padding: 40px 30px;
-  background-color: white;
-  margin: 30px;
-  border-radius: 10px;
-}
-
-.section-title {
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 30px;
-  color: #000;
-}
-
-/* Promotion Grids */
-.promotions-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.promotions-grid-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-
-/* Promotion Card */
-.promotion-card {
-  background-color: #f9f9f9;
-  border-radius: 10px;
-  overflow: hidden;
-  transition: box-shadow 0.3s;
-  border: 1px solid #e0e0e0;
-}
-
-.promotion-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.promo-image {
-  width: 90%;
-  height: 230px;
-  object-fit: cover;
-  margin: 15px;
-  border-radius: 10px;
-}
-
-.promo-content {
-  padding: 20px;
-}
-
-.promo-title {
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 10px;
-  color: #000;
-}
-
-.promo-description {
-  font-size: 13px;
-  color: #666;
-  margin-bottom: 10px;
-  line-height: 1.4;
-}
-
-.promo-validity {
-  font-size: 12px;
   color: #999;
-  margin-bottom: 15px;
+  text-decoration: line-through;
 }
 
-.promo-btn {
+.btn-comprar {
+  margin-top: 8px;
   width: 100%;
-  padding: 10px;
   border: none;
-  border-radius: 5px;
-  font-size: 13px;
-  font-weight: bold;
+  border-radius: 6px;
+  background: #b3e34f;
+  padding: 8px 0;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.promo-btn.primary {
-  background-color: #b3d900;
-  color: white;
-}
-
-.promo-btn.primary:hover {
-  background-color: #9ab800;
-}
-
-.promo-btn.secondary {
-  background-color: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-.promo-btn.secondary:hover {
-  background-color: #e8e8e8;
-}
-
-.promo-btn.details {
-  background-color: #f0f0f0;
-  color: #333;
-  border: 1px solid #ddd;
-}
-
-.promo-btn.details:hover {
-  background-color: #e8e8e8;
-}
-
-/* Floating Chat Button */
-.floating-chat-btn {
-  position: fixed;
-  bottom: 30px;
-  right: 30px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: #b3d900;
-  border: none;
-  font-size: 28px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.floating-chat-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .promotions-grid-4 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .header-left {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .nav {
-    gap: 15px;
-  }
-
-  .hero-banner {
-    padding: 40px 20px;
-  }
-
-  .hero-title {
-    font-size: 32px;
-  }
-
-  .hero-content {
-    max-width: 100%;
-  }
-
-  .promotions-grid-3 {
-    grid-template-columns: 1fr;
-  }
-
-  .promotions-grid-4 {
-    grid-template-columns: 1fr;
-  }
-
-  .section {
-    margin: 20px;
-    padding: 20px;
-  }
 }
 </style>
