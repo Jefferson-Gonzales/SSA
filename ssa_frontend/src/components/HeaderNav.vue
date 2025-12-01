@@ -2,7 +2,7 @@
   <div class="container">
     <header class="header">
       <div class="header-left">
-        <h1 class="logo">SAGASMART</h1>
+        <h1 class="logo">ShopAssist AI</h1>
         <nav class="nav">
           <router-link to="/about" class="nav-link">Catalogo</router-link>
           <router-link to="/catalogo" class="nav-link">Catalogo Personalizado</router-link>

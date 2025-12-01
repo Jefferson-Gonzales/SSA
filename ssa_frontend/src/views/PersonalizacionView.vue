@@ -163,11 +163,11 @@ import axios from 'axios'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const API_BASE_URL = 'http://localhost:8080/api'
+const API_BASE_URL = 'https://backendssa.onrender.com/api'
 
 const currentStep = ref(1)
 const totalSteps = 5
-const showConfirmModal = ref(false)    // 👈 Modal de confirmación
+const showConfirmModal = ref(false)    
 const isSaving = ref(false)
 
 const professions = [

@@ -487,7 +487,7 @@ const initStripeAndPaymentIntent = async () => {
     }));
 
     const { data } = await axios.post(
-      'http://localhost:8080/api/payments/create-intent',
+      'https://backendssa.onrender.com/api/payments/create-intent',
       { detalles },
       {
         headers: {
@@ -605,7 +605,7 @@ const confirmOrder = async () => {
     };
 
     const response = await axios.post(
-      'http://localhost:8080/api/checkout/stripe/confirm',
+      'https://backendssa.onrender.com/api/checkout/stripe/confirm',
       payload,
       {
         headers: { Authorization: `Bearer ${token}` },

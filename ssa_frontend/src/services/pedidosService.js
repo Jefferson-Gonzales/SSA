@@ -1,7 +1,7 @@
 // src/services/pedidosService.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api/pedidos';
+const API_URL = 'https://backendssa.onrender.com/api/pedidos';
 
 export const getMisPedidos = async () => {
   const token = localStorage.getItem('accessToken');

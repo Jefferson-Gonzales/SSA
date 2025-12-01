@@ -46,8 +46,8 @@ const errorMessage = ref(null);
 const isLoading = ref(false);
 
 // URL del endpoint de autenticación (Asegúrate de que coincida con tu backend)
-const LOGIN_URL = 'http://localhost:8080/api/auth/login';
-const API_BASE_URL = 'http://localhost:8080/api';
+const LOGIN_URL = 'https://backendssa.onrender.com/api/auth/login';
+const API_BASE_URL = 'https://backendssa.onrender.com/api';
 
 // 🔹 Nueva función: revisa preferencias y decide a dónde ir
 /*const redirectAfterLogin = async () => {
@@ -196,8 +196,8 @@ export default {
       this.error = null;
 
       try {
-        // 2. Llamada al endpoint de login en tu Spring Boot (http://localhost:8080/api/auth/login)
-        const LOGIN_URL = 'http://localhost:8080/api/auth/login';
+        // 2. Llamada al endpoint de login en tu Spring Boot (https://backendssa.onrender.com/api/auth/login)
+        const LOGIN_URL = 'https://backendssa.onrender.com/api/auth/login';
         const response = await axios.post(LOGIN_URL, {
           email: this.email,
           password: this.password,

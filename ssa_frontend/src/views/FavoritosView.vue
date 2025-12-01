@@ -54,7 +54,7 @@
 import axios from 'axios';
 
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'https://backendssa.onrender.com/api';
 
 // const LOCAL_STORAGE_KEY = 'SAGA_SHOPPING_CART'; 
 

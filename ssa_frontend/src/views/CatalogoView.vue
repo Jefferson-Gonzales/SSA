@@ -190,7 +190,7 @@ const MAX_PRICE_SLIDER = 1000;
 
 // ⭐ Estados de favoritos
 const favoriteStatuses = ref({}); 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'https://backendssa.onrender.com/api';
 
 // Toast
 const toastMessage = ref('');
@@ -455,7 +455,7 @@ const addToCart = (producto) => {
 // ===============
 const fetchCategorias = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/categorias/categorias'); 
+    const response = await axios.get('https://backendssa.onrender.com/api/categorias/categorias'); 
     categorias.value = [{ idcategoria: null, nombre: 'Todas las Categorías' }, ...response.data];
   } catch (err) {
     console.error("Error al cargar categorías:", err);

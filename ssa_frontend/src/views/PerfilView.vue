@@ -465,7 +465,7 @@ const selectAvatar = (url) => {
 
 
 // --- CONFIGURACIÓN Y CONSTANTES ---
-const API_BASE_URL = 'http://localhost:8080/api'; 
+const API_BASE_URL = 'https://backendssa.onrender.com/api'; 
 const TRACKING_STORAGE_KEY = 'SAGA_TRACKING_HISTORY'; 
 const activeSection = ref('Información Personal');
 const isEditing = ref(false);

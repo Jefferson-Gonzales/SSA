@@ -4,7 +4,7 @@
       <!-- Left Side - Branding -->
       <div class="registration-branding">
         <div class="brand-content">
-          <h1 class="brand-title">SagaSmart</h1>
+          <h1 class="brand-title">ShopAssist AI</h1>
           <p class="brand-tagline">Descubre moda inteligente</p>
           <div class="brand-benefits">
             <div class="benefit-item">

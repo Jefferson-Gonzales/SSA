@@ -79,7 +79,7 @@ const message = ref('');
 const isError = ref(false);
 
 // URL de tu backend
-const API_URL = 'http://localhost:8080/api/auth/forgot-password';
+const API_URL = 'https://backendssa.onrender.com/api/auth/forgot-password';
 
 /**
  * Maneja el envío de la solicitud de restablecimiento de contraseña.

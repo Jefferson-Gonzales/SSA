@@ -54,7 +54,7 @@ export default {
   async mounted() {
     this.loading = true;
     try {
-      const { data } = await axios.get('http://localhost:8080/api/productos/ofertas');
+      const { data } = await axios.get('https://backendssa.onrender.com/api/productos/ofertas');
       console.log("OFERTAS =>", data); // para verificar idProducto
       this.productos = data;
     } catch (e) {

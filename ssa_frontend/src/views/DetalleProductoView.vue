@@ -143,7 +143,7 @@ import ToastMessage from '@/components/ToastMessage.vue';
 // --- Constantes de localStorage ---
 const LOCAL_STORAGE_KEY = 'SAGA_SHOPPING_CART';
 const LOCAL_FAVORITES_KEY = 'SAGA_FAVORITES';
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'https://backendssa.onrender.com/api';
 
 export default {
   name: 'DetalleProductoView',

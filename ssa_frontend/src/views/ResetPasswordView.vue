@@ -135,7 +135,7 @@ const validationMessage = ref('El token de restablecimiento es inválido o ha ex
 const passwordsMatch = computed(() => newPassword.value === confirmPassword.value && newPassword.value.length > 0)
 
 // URL de tu backend
-const API_URL = 'http://localhost:8080/api/auth/reset-password'
+const API_URL = 'https://backendssa.onrender.com/api/auth/reset-password'
 
 const validateToken = () => {
   // Obtener el token de la URL query parameter

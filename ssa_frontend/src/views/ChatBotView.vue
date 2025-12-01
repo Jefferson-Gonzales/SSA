@@ -99,7 +99,7 @@ export default {
       messageText: '',
       messages: [],
       isTyping : false,
-      apiUrl: 'http://localhost:8080/api/chatbot',
+      apiUrl: 'https://backendssa.onrender.com/api/chatbot',
       storageKey: 'chat_history_guest',
 
       inactivityTimeoutId: null,
@@ -747,13 +747,13 @@ export default {
       console.log('🔍 Término de búsqueda limpio:', searchTerm);
 
       try {
-        const { data } = await axios.get('http://localhost:8080/api/productos/buscar', {
+        const { data } = await axios.get('https://backendssa.onrender.com/api/productos/buscar', {
           params: { query: searchTerm, limit: 10 }
         });
 
         if (!data || data.length === 0) {
           if (searchTerm !== rawName.toLowerCase()) {
-            const { data: dataRaw } = await axios.get('http://localhost:8080/api/productos/buscar', {
+            const { data: dataRaw } = await axios.get('https://backendssa.onrender.com/api/productos/buscar', {
               params: { query: rawName, limit: 10 }
             });
 
