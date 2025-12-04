@@ -19,7 +19,6 @@ const Homeroute = 'catalogo';
 // 🎯 Nombre de la ruta de autenticación
 const Loginroute = 'login';
 
-const Existroute = 'registro';
  
 const routes = [
   
